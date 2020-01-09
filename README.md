@@ -1,2 +1,2 @@
 # LPM-Geomod_Suite
-Geologic modeling suite plugins for AR2GEMS
+This is a geologic modeling suite plugins for AR2GEMS using signed distances functions and indicators.
