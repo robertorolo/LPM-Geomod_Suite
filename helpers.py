@@ -63,4 +63,4 @@ def downscale_property(grid, prop, fx, fy, fz):
             n = ijk_in_n(downscaled_grid, i, j, k)
             downscaled_prop[n] = value
             
-    return downscaled_grid, downscaled_prop
+    return downscaled_grid, downscaled_prop.tolist()
