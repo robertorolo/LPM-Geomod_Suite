@@ -44,6 +44,13 @@ def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name=None):
         
     return grid
 
+def ar2gasprop_to_ar2gems(grid, grid_name, prop, prop_name):
+    sgems.execute('NewCartesianGrid  {}::{}::{}::{}::{}::{}::{}::{}::{}::{}::0,00'.format(grid_name,
+                                                                                          grid.dim()[0], grid.dim()[1], grid.dim()[2],
+                                                                                          grid.cell_size()[0], grid.cell_size()[1], grid.cell_size()[2],
+                                                                                          grid.origin()[0], grid.origin()[1], grid.origin()[2]))
+    sgems.set_property(grid_name, prop_name, prop)
+
 def ijk_in_n(grid, i, j, k):
     dims = grid.dim()
     n = k*dims[0]*dims[1]+j*dims[0]+i
