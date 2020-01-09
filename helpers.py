@@ -1,4 +1,5 @@
 import ar2gas
+import sgems
 
 def modelfile_to_ar2gasmodel(path):
     f = open(path, "r")
@@ -27,3 +28,17 @@ def modelfile_to_ar2gasmodel(path):
             struc_model = ar2gas.compute.Covariance.gaussian(contribution, r1, r2, r3, a1, a2, a3)
             model_structs.append(struc_model)
     return model_structs
+
+def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name=None):
+    info = sgems.get_grid_info(grid_name)
+    
+    if region_name is None:
+        grid = ar2gas.data.CartesianGrid(region, 
+                                         info['num_cells'][0], info['num_cells'][1], info['num_cells'][2], 
+                                         info['dimension'][0], info['dimension'][1], info['dimension'][2], 
+                                         info['origin'][0], info['origin'][1], info['origin'][2])
+    else:
+        region = sgems.get_region(grid_name, region)
+        grid = ar2gas.data.MaskedGrid(grid, region)
+        
+    return grid
