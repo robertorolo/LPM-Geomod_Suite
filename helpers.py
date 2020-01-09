@@ -30,10 +30,10 @@ def modelfile_to_ar2gasmodel(path):
             model_structs.append(struc_model)
     return model_structs
 
-def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name=None):
+def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
     info = sgems.get_grid_info(grid_name)
     
-    if region_name is None:
+    if region_name == '':
         grid = ar2gas.data.CartesianGrid(region, 
                                          info['num_cells'][0], info['num_cells'][1], info['num_cells'][2], 
                                          info['dimension'][0], info['dimension'][1], info['dimension'][2], 
