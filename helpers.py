@@ -95,4 +95,4 @@ def refinement_zone(grid, geomodel):
         if np.unique(cats).size is not 1:
             refinement_prop[indice_list] = -999
 
-    return refinement_prop
+    return refinement_prop, indices_list
