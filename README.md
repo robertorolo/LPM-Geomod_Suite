@@ -19,6 +19,12 @@ Creates one signed distances property for each property.
 
 ## Deterministic
 
+### Transformations
+
+#### Softmax
+
+#### Entropy
+
 ## Stochastic
 
 ## Validation
