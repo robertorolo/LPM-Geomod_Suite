@@ -20,6 +20,7 @@ Creates one signed distances property for each property.
 ## Deterministic
 
 ### Transformations
+There are transformations for the gridded properties too.
 
 #### Softmax
 
