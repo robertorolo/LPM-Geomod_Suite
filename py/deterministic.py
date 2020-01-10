@@ -5,6 +5,8 @@
 import sgems
 import numpy as np
 import helpers
+from scipy.interpolate import NearestNDInterpolator
+import ar2gas
 
 #################################################################################################
 
@@ -45,21 +47,23 @@ def refinement_zone(grid, geomodel):
 
     return refinement_prop, indices_list
 
-def multicat_nan(df, sdcols, refiment_prop, ind=False):
-    cols_codes = [int(col[3:]) for col in sdcols]
-    geomodel = []
-    matrix = df[sdcols].values
-    idx=0
-    for i in matrix:
-        if np.isnan(i).all():
-            geomodel.append(refiment_prop[idx])
-            idx=idx+1
-        else:
-            index = i.argmin(axis=0) if ind is False else i.argmax(axis=0)
-            geomodel.append(cols_codes[index])
-            idx=idx+1
+def nn(x,y,z,var,grid):
+    nan_mask = np.isfinite(var)
+    points_array = np.vstack((x,y,z)).T
+    knn = NearestNDInterpolator(points_array[nan_mask], var[nan_mask])
+    grids_points_array = grid.locations()
+    results = knn(grids_points_array)
 
-    df['geologic model'] = geomodel
+    return results
+
+def dual_kriging(cov, x, y, z, prop, grid):
+    krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
+    ps = ar2gas.data.PointSet(np.array(x), np.array(y), np.array(z))
+    estimator = ar2gas.compute.DualKriging.OK(krig_cov, ps, np.array(prop), 0)
+    target_prop = np.ones(grid.size())*float('nan')
+    estimator.compute(grid, target_prop, 0)
+
+    return target_prop
 
 #################################################################################################
 
