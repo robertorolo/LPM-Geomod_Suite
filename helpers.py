@@ -31,37 +31,43 @@ def modelfile_to_ar2gasmodel(path):
     return model_structs
 
 def ar2gemsvarwidget_to_ar2gascovariance():
-    cov = []
-    
-    for j in range(n_struct):
-        cov_type = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['type']
+    cov_lst = []
+    n_var = int(self.params['indicator_regionalization_input']['number_of_indicator_group'])
 
-        cont = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['contribution']
+    for i in range(n_var):
 
-        if cov_type == 'Nugget Covariance':
-            nugget = ar2gas.compute.Covariance.nugget(float(cont))
-            cov.append(nugget)
+        n_struct = int(self.params['indicator_regionalization_input'][indicator_group]['Covariance_input']['structures_count'])
+        cov = []
+        
+        for j in range(n_struct):
+            cov_type = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['type']
 
-        else:
-            range1 = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range1']
-            range2 = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range2']
-            range3 = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range3']
+            cont = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['contribution']
 
-            rake = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['rake']
-            dip = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['dip']
-            azimuth = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['azimuth']
+            if cov_type == 'Nugget Covariance':
+                nugget = ar2gas.compute.Covariance.nugget(float(cont))
+                cov.append(nugget)
 
-            if cov_type == 'Spherical Covariance':
-                struct = ar2gas.compute.Covariance.spherical(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
-                cov.append(struct)
-            if cov_type == 'Exponential Covariance':
-                struct = ar2gas.compute.Covariance.exponential(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
-                cov.append(struct)
-            if cov_type == 'Gaussian Covariance':
-                struct = ar2gas.compute.Covariance.gaussian(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
-                cov.append(struct)
+            else:
+                range1 = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range1']
+                range2 = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range2']
+                range3 = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range3']
 
-    return cov
+                rake = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['rake']
+                dip = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['dip']
+                azimuth = self.params['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['azimuth']
+
+                if cov_type == 'Spherical Covariance':
+                    struct = ar2gas.compute.Covariance.spherical(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
+                    cov.append(struct)
+                if cov_type == 'Exponential Covariance':
+                    struct = ar2gas.compute.Covariance.exponential(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
+                    cov.append(struct)
+                if cov_type == 'Gaussian Covariance':
+                    struct = ar2gas.compute.Covariance.gaussian(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
+                    cov.append(struct)
+
+    return cov_lst
 
 def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
     info = sgems.get_grid_info(grid_name)
