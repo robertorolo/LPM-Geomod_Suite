@@ -47,7 +47,7 @@ def refinement_zone(grid, geomodel):
 
     return refinement_prop, indices_list
 
-def nn(x,y,z,var,grid):
+def nn(x, y, z, var, grid):
     nan_mask = np.isfinite(var)
     points_array = np.vstack((x,y,z)).T
     knn = NearestNDInterpolator(points_array[nan_mask], var[nan_mask])
