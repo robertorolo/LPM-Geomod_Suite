@@ -18,3 +18,9 @@ Cretas one indicator property for each category.
 Creates one signed distances property for each property.
 
 ## Deterministic
+
+## Stochastic
+
+## Validation
+
+## Optimizationn
