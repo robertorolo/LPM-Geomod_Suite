@@ -57,7 +57,7 @@ class signed_distances_transform: #aqui vai o nome do plugin
         x, y, z = np.array(sgems.get_X(grid_name)), np.array(sgems.get_Y(grid_name)), np.array(sgems.get_Z(grid_name))
         coords_matrix = np.vstack((x,y,z)).T
 
-	#calculating indicators
+	#calculating signed distances
         nan_filter = np.isfinite(prop_values)
         unique_rts = np.unique(prop_values[nan_filter])
 
