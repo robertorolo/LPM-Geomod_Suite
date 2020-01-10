@@ -12,7 +12,7 @@ Tranformations are straightforward. User needs to select the categorical rock ty
 ![Transformations](images/transformations.PNG)
 
 ### Indicators
-Cretas one indicator property for each category.
+Creates one indicator property for each category.
 
 ### Signed distances
 Creates one signed distances property for each property.
