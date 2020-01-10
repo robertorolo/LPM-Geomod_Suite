@@ -73,7 +73,6 @@ def downscale_property(grid, prop, fx, fy, fz):
     return downscaled_grid, downscaled_prop.tolist()
 
 def marching_cubes(grid):
-
     nx, ny, nz = grid.dim()[0], grid.dim()[1], grid.dim()[2]
 
     range_x, range_y, range_z = [l for l in range(0,nx-1)], [l for l in range(0,ny-1)], [l for l in range(0,nz-1)]
@@ -87,3 +86,13 @@ def marching_cubes(grid):
         indices_list.append(indices)
     
     return indices_list
+
+def refinement_zone(grid, geomodel):
+    refinement_prop = geomodel.copy()
+    indices_list = marching_cubes(grid)
+    for indice_list in indices_list:
+        cats = geomodel[indice_list]
+        if np.unique(cats).size is not 1:
+            refinement_prop[indice_list] = -999
+
+    return refinement_prop
