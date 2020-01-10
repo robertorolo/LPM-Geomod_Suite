@@ -71,3 +71,19 @@ def downscale_property(grid, prop, fx, fy, fz):
             downscaled_prop[n] = value
             
     return downscaled_grid, downscaled_prop.tolist()
+
+def marching_cubes(grid):
+
+    nx, ny, nz = grid.dim()[0], grid.dim()[1], grid.dim()[2]
+
+    range_x, range_y, range_z = [l for l in range(0,nx-1)], [l for l in range(0,ny-1)], [l for l in range(0,nz-1)]
+
+    indices_list = []
+    
+    for k, j, i in product(range_z, range_y, range_x):
+    
+        cube = np.array([[i,j,k],[i,j+1,k],[i+1,j+1,k],[i+1,j,k],[i,j,k+1],[i,j+1,k+1],[i+1,j+1,k+1],[i+1,j,k+1]])
+        indices = [ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
+        indices_list.append(indices)
+    
+    return indices_list
