@@ -31,10 +31,10 @@ class indicators_transform: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -43,7 +43,23 @@ class indicators_transform: #aqui vai o nome do plugin
     def execute(self):
       
         #aqui vai o codigo
-        print("Eu funciono") #apague essa linha
+        #getting variables
+        grid_name = self.params['rt_prop']['grid']
+        prop_name = self.params['rt_prop']['property']
+        prop_values = sgems.get_property(grid_name, prop_name)
+        prop_values = np.array(prop_values)
+
+	#calculating indicators
+        nan_filter = np.isfinite(prop_values)
+        unique_rts = np.unique(prop_values[nan_filter])
+
+        for rt in unique_rts:
+            print('calculating indicators for rock type {}'.format(int(rt)))
+            ind_prop = prop_values == rt
+            ind_prop = np.where(ind_prop == True, 1., 0.)
+            ind_prop[~nan_filter] = float('nan')
+            indprop_name = 'indicators_rt_{}'.format(int(rt))
+            sgems.set_property(grid_name, indprop_name, ind_prop.tolist())
 
         return True
 
