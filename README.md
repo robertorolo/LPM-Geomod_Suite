@@ -8,6 +8,11 @@ If everything goes well you will see LPM-Geomod_Suite in the algorithms pannel.
 ![Algo pannel](images/algo_pannel.png)
 
 ## Transformations 
+Tranformations are straightforward. User needs to select the categorical rock type property.
+![Algo pannel](images/transformations.png)
+
 ### Indicators
+Cretas one indicator property for each category.
 
 ### Signed distances
+Creates one signed distances property for each property.
