@@ -45,6 +45,22 @@ def refinement_zone(grid, geomodel):
 
     return refinement_prop, indices_list
 
+def multicat_nan(df, sdcols, refiment_prop, ind=False):
+    cols_codes = [int(col[3:]) for col in sdcols]
+    geomodel = []
+    matrix = df[sdcols].values
+    idx=0
+    for i in matrix:
+        if np.isnan(i).all():
+            geomodel.append(refiment_prop[idx])
+            idx=idx+1
+        else:
+            index = i.argmin(axis=0) if ind is False else i.argmax(axis=0)
+            geomodel.append(cols_codes[index])
+            idx=idx+1
+
+    df['geologic model'] = geomodel
+
 #################################################################################################
 
 class deterministic: #aqui vai o nome do plugin
