@@ -24,3 +24,5 @@ Creates one signed distances property for each property.
 ## Validation
 
 ## Optimizationn
+
+## What can be done?
