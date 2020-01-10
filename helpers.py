@@ -30,7 +30,7 @@ def modelfile_to_ar2gasmodel(path):
             model_structs.append(struc_model)
     return model_structs
 
-def ar2gemsvarwidget_to_ar2gascovariance()
+def ar2gemsvarwidget_to_ar2gascovariance():
     cov = []
     
     for j in range(n_struct):
