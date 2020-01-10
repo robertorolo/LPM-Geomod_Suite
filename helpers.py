@@ -96,3 +96,13 @@ def refinement_zone(grid, geomodel):
             refinement_prop[indice_list] = -999
 
     return refinement_prop, indices_list
+
+def refinement_zone(grid, geomodel): 
+    refinement_prop = geomodel.copy()
+    indices_list = marching_cubes(grid)
+    for indice_list in indices_list:
+        cats = geomodel[indice_list]
+        if np.unique(cats).size is not 1:
+            refinement_prop[indice_list] = -99
+
+    return refinement_prop, indices_list
