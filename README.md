@@ -16,3 +16,5 @@ Cretas one indicator property for each category.
 
 ### Signed distances
 Creates one signed distances property for each property.
+
+## Deterministic
