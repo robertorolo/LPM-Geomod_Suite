@@ -21,7 +21,6 @@ def read_params(a,j=''):
             read_params(a[i],j+"['"+str(i)+"']")
 
 def min_dist(point, points):
-
 	dist_matrix = distance.cdist([point], points, "euclidean")
 	return np.amin(dist_matrix)
 
@@ -57,7 +56,7 @@ class signed_distances_transform: #aqui vai o nome do plugin
         x, y, z = np.array(sgems.get_X(grid_name)), np.array(sgems.get_Y(grid_name)), np.array(sgems.get_Z(grid_name))
         coords_matrix = np.vstack((x,y,z)).T
 
-	#calculating signed distances
+	    #calculating signed distances
         nan_filter = np.isfinite(prop_values)
         unique_rts = np.unique(prop_values[nan_filter])
 

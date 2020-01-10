@@ -49,7 +49,7 @@ class indicators_transform: #aqui vai o nome do plugin
         prop_values = sgems.get_property(grid_name, prop_name)
         prop_values = np.array(prop_values)
 
-	#calculating indicators
+	    #calculating indicators
         nan_filter = np.isfinite(prop_values)
         unique_rts = np.unique(prop_values[nan_filter])
 
