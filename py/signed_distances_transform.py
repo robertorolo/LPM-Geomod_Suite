@@ -76,7 +76,7 @@ class signed_distances_transform: #aqui vai o nome do plugin
                 else:
                     point = coords_matrix[idx]
                     if pt == rt:
-                        sd_prop.append(min_dist(point, points_0))
+                        sd_prop.append(-min_dist(point, points_0))
                     else:
                        sd_prop.append(min_dist(point, points_1)) 
         
