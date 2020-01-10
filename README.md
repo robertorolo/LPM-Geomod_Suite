@@ -10,7 +10,7 @@ If everything goes well you will see LPM-Geomod_Suite in the algorithms pannel.
 
 ## Transformations 
 Tranformations are straightforward. User needs to select the categorical rock type property.
-![Transformations](images/transform.PNG)
+![Transformations](images/transformations.PNG)
 
 ### Indicators
 Creates one indicator property for each category.
