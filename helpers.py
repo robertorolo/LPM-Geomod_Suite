@@ -33,10 +33,12 @@ def modelfile_to_ar2gasmodel(path):
 def ar2gemsvarwidget_to_ar2gascovariance(p):
     cov_lst = []
     n_var = int(p['indicator_regionalization_input']['number_of_indicator_group'])
+    indicator_group = "Indicator_group_" + str(i + 1)
 
     for i in range(n_var):
 
         n_struct = int(p['indicator_regionalization_input'][indicator_group]['Covariance_input']['structures_count'])
+        Structure = "Structure_" + str(j + 1)
         cov = []
         
         for j in range(n_struct):
@@ -73,12 +75,11 @@ def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
     info = sgems.get_grid_info(grid_name)
     
     if region_name == '':
-        grid = ar2gas.data.CartesianGrid(region, 
-                                         info['num_cells'][0], info['num_cells'][1], info['num_cells'][2], 
+        grid = ar2gas.data.CartesianGrid(info['num_cells'][0], info['num_cells'][1], info['num_cells'][2], 
                                          info['dimension'][0], info['dimension'][1], info['dimension'][2], 
                                          info['origin'][0], info['origin'][1], info['origin'][2])
     else:
-        region = sgems.get_region(grid_name, region)
+        region = sgems.get_region(grid_name, region_name)
         grid = ar2gas.data.MaskedGrid(grid, region)
         
     return grid

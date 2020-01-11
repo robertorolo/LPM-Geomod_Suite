@@ -7,6 +7,8 @@ import numpy as np
 import helpers
 from scipy.interpolate import NearestNDInterpolator
 import ar2gas
+from itertools import product
+
 
 #################################################################################################
 
@@ -32,7 +34,7 @@ def marching_cubes(grid):
     for k, j, i in product(range_z, range_y, range_x):
     
         cube = np.array([[i,j,k],[i,j+1,k],[i+1,j+1,k],[i+1,j,k],[i,j,k+1],[i,j+1,k+1],[i+1,j+1,k+1],[i+1,j,k+1]])
-        indices = [ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
+        indices = [helpers.ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
         indices_list.append(indices)
     
     return indices_list
