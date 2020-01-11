@@ -80,14 +80,16 @@ def ar2gemsvarwidget_to_ar2gascovariance(p):
 
 def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
     info = sgems.get_grid_info(grid_name)
-    
-    if region_name == '':
-        grid = ar2gas.data.CartesianGrid(info['num_cells'][0], info['num_cells'][1], info['num_cells'][2], 
+    grid = ar2gas.data.CartesianGrid(int(info['num_cells'][0]), int(info['num_cells'][1]), int(info['num_cells'][2]), 
                                          info['dimension'][0], info['dimension'][1], info['dimension'][2], 
                                          info['origin'][0], info['origin'][1], info['origin'][2])
-    else:
-        region = sgems.get_region(grid_name, region_name)
-        grid = ar2gas.data.MaskedGrid(grid, region)
+    if region_name != '':
+        region = np.array(sgems.get_region(grid_name, region_name))
+        mask = region == 1
+        #active_indexes = np.array([i for i in range(len(mask))])[mask]
+        #grid = grid.grid_mask(mask.tolist())
+        grid = ar2gas.data.MaskedGrid(grid, mask.tolist())
+        #grid = ar2gas.data.MaskedGrid(grid, active_indexes.tolist())
         
     return grid
 

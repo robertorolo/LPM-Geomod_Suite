@@ -58,10 +58,13 @@ def nn(x, y, z, var, grid):
     return results
 
 def dual_kriging(cov, x, y, z, prop, grid):
+    nan_filter = np.isfinite(np.array(prop))
     krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
-    ps = ar2gas.data.PointSet(np.array(x), np.array(y), np.array(z))
-    estimator = ar2gas.compute.DualKriging.OK(krig_cov, ps, np.array(prop), 0)
-    target_prop = np.ones(grid.size())*float('nan')
+    prop = np.array(prop)[nan_filter]
+    ps = ar2gas.data.PointSet(np.array(x)[nan_filter], np.array(y)[nan_filter], np.array(z)[nan_filter])
+    estimator = ar2gas.compute.DualKriging.OK(krig_cov, ps, prop, 0)
+    #target_prop = np.ones(grid.size())*float('nan')
+    target_prop = np.ones(grid.size())
     estimator.compute(grid, target_prop, 0)
 
     return target_prop
@@ -96,7 +99,7 @@ class deterministic: #aqui vai o nome do plugin
         tg_region_name = self.params['gridselector']['region']
         tg_prop_name = self.params['lineEdit']['value']
         keep_variables = self.params['checkBox_2']['value']
-        tp_grid_name = self.params['gridselectorbasic']['value']
+        props_grid_name = self.params['gridselectorbasic']['value']
         n_var = self.params['orderedpropertyselector']['count']
         var_names = self.params['orderedpropertyselector']['value'].split(';')
         codes = [v.split('_')[-1] for v in var_names]
@@ -116,10 +119,23 @@ class deterministic: #aqui vai o nome do plugin
             varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(p)
             if len(varg_lst) == 1:
                 varg_lst = varg_lst * len(codes)
-            print(codes, varg_lst)
             variograms = dict(zip(codes, varg_lst))
 
-        print(variograms)
+        #interpolating variables
+        a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
+        x, y, z = np.array(sgems.get_X(props_grid_name)), np.array(sgems.get_Y(props_grid_name)), np.array(sgems.get_Z(props_grid_name))
+        for idx, v in enumerate(var_names):
+            rt = codes[idx]
+            print('Interpolating {} for RT {} by dual kriging'.format(var_type, rt))
+            values = np.array(sgems.get_property(props_grid_name, v))
+            results = dual_kriging(variograms[rt], x, y, z, values, a2g_grid)
+            if keep_variables == '1':
+                prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
+                sgems.set_property(tg_grid_name, prop_name, results.tolist())
+        print('Finished!')
+
+        #creating a geologic model
+
 
         return True
 
