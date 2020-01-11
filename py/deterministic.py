@@ -102,12 +102,21 @@ class deterministic: #aqui vai o nome do plugin
         codes = [v.split('_')[-1] for v in var_names]
 
         #getting variograms
+        print('Getting variogram models')
         use_model_file = self.params['checkBox']['value'] 
         if use_model_file == '1':
             path = self.params['filechooser']['value']
             variograms = helpers.modelfile_to_ar2gasmodel(path)
+            if len(variograms) == 1:
+                values_covs = list(variograms.values())
+                varg_lst = values_covs * len(codes)
+                variograms = dict(zip(codes, varg_lst))
         else:
-            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(self.params)
+            p = self.params
+            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(p)
+            if len(varg_lst) == 1:
+                varg_lst = varg_lst * len(codes)
+            print(codes, varg_lst)
             variograms = dict(zip(codes, varg_lst))
 
         print(variograms)

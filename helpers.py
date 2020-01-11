@@ -8,7 +8,6 @@ def modelfile_to_ar2gasmodel(path):
     lines = f.readlines()
     cov_dict = {}
     for idx, l in enumerate(lines):
-        print(l)
         if len(l) == 2:
             rt = int(l)
             model_structs = []
@@ -40,15 +39,14 @@ def modelfile_to_ar2gasmodel(path):
 def ar2gemsvarwidget_to_ar2gascovariance(p):
     cov_lst = []
     n_var = int(p['indicator_regionalization_input']['number_of_indicator_group'])
-    indicator_group = "Indicator_group_" + str(i + 1)
 
     for i in range(n_var):
-
+        indicator_group = "Indicator_group_" + str(i + 1)
         n_struct = int(p['indicator_regionalization_input'][indicator_group]['Covariance_input']['structures_count'])
-        Structure = "Structure_" + str(j + 1)
         cov = []
         
         for j in range(n_struct):
+            Structure = "Structure_" + str(j + 1)
             cov_type = p['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['type']
 
             cont = p['indicator_regionalization_input'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['contribution']
@@ -75,6 +73,8 @@ def ar2gemsvarwidget_to_ar2gascovariance(p):
                 if cov_type == 'Gaussian Covariance':
                     struct = ar2gas.compute.Covariance.gaussian(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
                     cov.append(struct)
+
+        cov_lst.append(cov)
 
     return cov_lst
 
