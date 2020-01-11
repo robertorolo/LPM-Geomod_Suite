@@ -1,5 +1,5 @@
 import subprocess
 import sys
 
-pkg = 'scipy pyevtk'
+pkg = 'scipy'
 subprocess.call([sys.executable, '-m', 'pip', 'install', '{}'.format(pkg)])
