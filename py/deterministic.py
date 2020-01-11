@@ -9,7 +9,6 @@ from scipy.interpolate import NearestNDInterpolator
 import ar2gas
 from itertools import product
 
-
 #################################################################################################
 
 #defina aqui as funcoes que serao utilizadas no codigo
@@ -91,6 +90,27 @@ class deterministic: #aqui vai o nome do plugin
     def execute(self):
       
         #aqui vai o codigo
+        #getting variables
+        var_type = self.params['comboBox']['value']
+        tg_grid_name = self.params['gridselector']['value']
+        tg_region_name = self.params['gridselector']['region']
+        tg_prop_name = self.params['lineEdit']['value']
+        keep_variables = self.params['checkBox_2']['value']
+        tp_grid_name = self.params['gridselectorbasic']['value']
+        n_var = self.params['orderedpropertyselector']['count']
+        var_names = self.params['orderedpropertyselector']['value'].split(';')
+        codes = [v.split('_')[-1] for v in var_names]
+
+        #getting variograms
+        use_model_file = self.params['checkBox']['value'] 
+        if use_model_file == '1':
+            path = self.params['filechooser']['value']
+            variograms = helpers.modelfile_to_ar2gasmodel(path)
+        else:
+            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(self.params)
+            variograms = dict(zip(codes, varg_lst))
+
+        print(variograms)
 
         return True
 
