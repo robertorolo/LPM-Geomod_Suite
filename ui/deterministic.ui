@@ -19,8 +19,8 @@
   <property name="AlgorithmDescription" stdset="0">
    <string>creates a deterministic geologic model</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
       <number>0</number>
@@ -35,8 +35,8 @@
          <property name="title">
           <string>Select properties type</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
            <widget class="QComboBox" name="comboBox">
             <item>
              <property name="text">
@@ -66,56 +66,17 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBox_3">
-         <property name="title">
-          <string>Select target grid</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_5">
-          <item row="3" column="0">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Property name</string>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="3" column="2">
-           <widget class="QLineEdit" name="lineEdit">
-            <property name="text">
-             <string>geomodel</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="1">
-           <widget class="GridSelector" name="gridselector"/>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
           <string>Select properties</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_4">
-          <item row="1" column="0">
-           <widget class="OrderedPropertySelector" name="orderedpropertyselector"/>
-          </item>
-          <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
            <widget class="GridSelectorBasic" name="gridselectorbasic"/>
+          </item>
+          <item>
+           <widget class="OrderedPropertySelector" name="orderedpropertyselector"/>
           </item>
          </layout>
         </widget>
@@ -154,10 +115,23 @@
            </widget>
           </item>
           <item row="0" column="7">
-           <widget class="QSpinBox" name="iterations"/>
+           <widget class="QSpinBox" name="iterations">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
           </item>
           <item row="2" column="4">
            <widget class="QSpinBox" name="fy">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="value">
              <number>2</number>
             </property>
@@ -165,6 +139,12 @@
           </item>
           <item row="2" column="1">
            <widget class="QSpinBox" name="fx">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="value">
              <number>2</number>
             </property>
@@ -199,6 +179,12 @@
           </item>
           <item row="2" column="7">
            <widget class="QSpinBox" name="fz">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
             <property name="value">
              <number>2</number>
             </property>
@@ -220,6 +206,45 @@
          </layout>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string>Select target grid</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <item row="0" column="0" colspan="2">
+           <widget class="GridSelector" name="gridselector">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="lineEdit">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>geomodel</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Property name</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tab2">
@@ -232,15 +257,15 @@
          <property name="title">
           <string>variogram model files</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_8">
-          <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_6">
+          <item>
            <widget class="QCheckBox" name="checkBox">
             <property name="text">
              <string>Use variograms model file instead</string>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
+          <item>
            <widget class="FileChooser" name="filechooser">
             <property name="enabled">
              <bool>false</bool>
@@ -255,8 +280,8 @@
          <property name="title">
           <string>Manual input</string>
          </property>
-         <layout class="QGridLayout" name="gridLayout_9">
-          <item row="0" column="0">
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
            <widget class="Indicator_regionalization_input" name="indicator_regionalization_input"/>
           </item>
          </layout>
