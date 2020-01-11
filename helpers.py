@@ -1,6 +1,7 @@
 import ar2gas
 import sgems
 from itertools import product
+import numpy as np
 
 def modelfile_to_ar2gasmodel(path):
     f = open(path, "r")
