@@ -71,7 +71,7 @@
           <item row="0" column="0">
            <widget class="FileChooser" name="filechooser">
             <property name="mode">
-             <enum>FileChooser::Directory</enum>
+             <enum>FileChooser::Any</enum>
             </property>
            </widget>
           </item>
@@ -113,7 +113,7 @@
           <item row="0" column="0">
            <widget class="FileChooser" name="filechooser_2">
             <property name="mode">
-             <enum>FileChooser::Directory</enum>
+             <enum>FileChooser::Any</enum>
             </property>
            </widget>
           </item>
