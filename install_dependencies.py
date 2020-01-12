@@ -1,5 +1,6 @@
 import subprocess
 import sys
 
-pkg = 'scipy'
-subprocess.call([sys.executable, '-m', 'pip', 'install', '{}'.format(pkg)])
+pkgs = ['scipy', 'pyevtk']
+for pkg in pkgs:
+    subprocess.call([sys.executable, '-m', 'pip', 'install', '{}'.format(pkg)])

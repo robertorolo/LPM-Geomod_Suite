@@ -4,6 +4,7 @@
 #importe aqui os pacotes necessarios
 import sgems
 import numpy as np
+import pyevtk
 
 #################################################################################################
 
@@ -31,10 +32,10 @@ class vtk_export: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        #print("dicionario de parametros: ", params)
+        print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        #read_params(params) #para nao printar comente essa linha
+        read_params(params) #para nao printar comente essa linha
 
         return True
 
