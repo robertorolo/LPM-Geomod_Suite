@@ -10,9 +10,6 @@ from scipy.spatial.distance import cdist
 import ar2gas
 from itertools import product
 import time
-from pathos.pools import ProcessPool
-import multiprocess
-import dill
 
 #################################################################################################
 
@@ -86,15 +83,14 @@ def lhs(coords_matrix, cov):
     print('Took {} seconds'.format(t2-t1))
     return lhs_inv
 
-def matrix_operations(krig_cov, coords, node):
+def matrices_operations(krig_cov, coords, node): #can be used in paralelization
     rhs = krig_cov.rhs(coords, node)
-    #print(rhs)
     rhs = np.append(rhs, 0)
     w = np.dot(rhs, lhs_inv).T
     z = np.dot(w, var)
     return z
 
-def global_krig(coords, grid, cov, lhs_inv, var, ncpus):
+def global_krig(coords, grid, cov, lhs_inv, var):
     t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     var = np.append(var, 0)
@@ -103,10 +99,18 @@ def global_krig(coords, grid, cov, lhs_inv, var, ncpus):
     else:
         mask = np.ones(grid.size())
     nodes = grid.locations()
-    pool = ProcessPool(nodes=ncpus-1)
-    results = pool.map(matrix_operations, [krig_cov], [coords], nodes)
-    pool.close()
-    print(results)
+    result = np.ones(len(mask))*float('nan')
+    mg_idx = 0
+    for idx, maskval in enumerate(mask):
+        if idx%1000 == 0:
+            print('Interpolating node {}'.format(idx))
+        if maskval == 1:
+            rhs = krig_cov.rhs(coords, nodes[mg_idx])
+            rhs = np.append(rhs, 0)
+            w = np.dot(rhs, lhs_inv).T
+            z = np.dot(w, var)
+            result[idx] = z
+            mg_idx = mg_idx+1
     t2 = time.time()
     print('Took {} seconds'.format(t2-t1))
     return result
@@ -192,8 +196,8 @@ class deterministic: #aqui vai o nome do plugin
 
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
-                print('Interpolating RT {} using {} processors'.format(rt, ncpus-1))
-                results = global_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx], ncpus)
+                print('Interpolating RT {}'.format(rt))
+                results = global_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx])
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -202,17 +206,16 @@ class deterministic: #aqui vai o nome do plugin
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
                 print('Interpolating using one covarinace model per variables')
-                print('Interpolating RT {} using {} processors'.format(rt, ncpus-1))
+                print('Interpolating RT {}'.format(rt))
                 lhs_inv = lhs(coords_matrix, variograms[idx])
-                results = global_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx], ncpus)
+                results = global_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx])
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
 
-        print('Finished!')
+        print('Finished interpolating!')
 
         #creating a geologic model
-
 
         return True
 
