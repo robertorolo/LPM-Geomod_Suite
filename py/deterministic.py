@@ -187,7 +187,6 @@ class deterministic: #aqui vai o nome do plugin
 
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
         coords_matrix = np.vstack((x,y,z)).T 
-        ncpus = multiprocess.cpu_count() 
 
         if len(variograms) == 1:
             print('Interpolating using the same covarinace model for all variables')
