@@ -185,7 +185,7 @@ class deterministic: #aqui vai o nome do plugin
 
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
-                print('Interpolating RT {}'.format(rt))
+                print('Interpolating RT {} using {} processors'.format(rt, ncpus))
                 results = global_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx], ncpus)
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
@@ -195,7 +195,7 @@ class deterministic: #aqui vai o nome do plugin
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
                 print('Interpolating using one covarinace model per variables')
-                print('Interpolating RT {}'.format(rt))
+                print('Interpolating RT {} using {} processors'.format(rt, ncpus))
                 lhs_inv = lhs(coords_matrix, variograms[idx])
                 results = global_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx], ncpus)
                 if keep_variables == '1':
