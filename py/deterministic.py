@@ -10,7 +10,7 @@ from scipy.spatial.distance import cdist
 import ar2gas
 from itertools import product
 import time
-import pathos.multiprocessing as mp
+from pathos.pools import ProcessPool
 
 #################################################################################################
 
@@ -95,10 +95,8 @@ def global_krig(coords, grid, cov, lhs_inv, var):
     else:
         mask = np.ones(grid.size())
     nodes = grid.locations()
-    n_threads = mp.cpu_count()
-    print("Number of processors: ", n_threads)
-    pool = mp.Pool(n_threads)
-    results = [pool.apply(matrix_operations, args=(krig_cov, coords, node)) for node in nodes]
+    pool = ProcessPool(nodes=4)
+    results = pool.map(matrix_operations, krig_cov, coords, nodes)
     pool.close()
     print(results)
     t2 = time.time()
