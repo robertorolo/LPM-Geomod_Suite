@@ -72,7 +72,7 @@
       <item row="2" column="3" colspan="5">
        <widget class="QLineEdit" name="lineEdit">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -186,6 +186,9 @@
         </property>
         <property name="maximum">
          <double>99999999.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
         </property>
        </widget>
       </item>
