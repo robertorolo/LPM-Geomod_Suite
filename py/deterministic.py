@@ -31,15 +31,29 @@ def read_params(a,j=''):
 def marching_cubes(grid):
     nx, ny, nz = grid.dim()[0], grid.dim()[1], grid.dim()[2]
 
-    range_x, range_y, range_z = [l for l in range(0,nx-1)], [l for l in range(0,ny-1)], [l for l in range(0,nz-1)]
+    if nz != 1:
 
-    indices_list = []
-    
-    for k, j, i in product(range_z, range_y, range_x):
-    
-        cube = np.array([[i,j,k],[i,j+1,k],[i+1,j+1,k],[i+1,j,k],[i,j,k+1],[i,j+1,k+1],[i+1,j+1,k+1],[i+1,j,k+1]])
-        indices = [helpers.ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
-        indices_list.append(indices)
+        range_x, range_y, range_z = [l for l in range(0,nx-1)], [l for l in range(0,ny-1)], [l for l in range(0,nz-1)]
+
+        indices_list = []
+        
+        for k, j, i in product(range_z, range_y, range_x):
+        
+            cube = np.array([[i,j,k],[i,j+1,k],[i+1,j+1,k],[i+1,j,k],[i,j,k+1],[i,j+1,k+1],[i+1,j+1,k+1],[i+1,j,k+1]])
+            indices = [helpers.ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
+            indices_list.append(indices)
+
+    else:
+
+        range_x, range_y = [l for l in range(0,nx-1)], [l for l in range(0,ny-1)]
+
+        indices_list = []
+        
+        for j, i in product(range_y, range_x):
+        
+            cube = np.array([[i,j,0],[i,j+1,0],[i+1,j+1,0],[i+1,j,0],[i,j,0],[i,j+1,0],[i+1,j+1,0],[i+1,j,0]])
+            indices = [ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
+            indices_list.append(indices)
     
     return indices_list
 
