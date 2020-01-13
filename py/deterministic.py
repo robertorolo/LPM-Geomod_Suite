@@ -87,7 +87,7 @@ def matrix_operations(krig_cov, coords, node):
     z = np.dot(w, var)
     return z
 
-def global_krig(coords, grid, cov, lhs_inv, var):
+def global_krig(coords, grid, cov, lhs_inv, var, ncpus):
     t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     var = np.append(var, 0)
@@ -96,7 +96,6 @@ def global_krig(coords, grid, cov, lhs_inv, var):
     else:
         mask = np.ones(grid.size())
     nodes = grid.locations()
-    ncpus = multiprocessing.cpu_count()
     pool = ProcessPool(nodes=ncpus-1)
     results = pool.map(matrix_operations, krig_cov, coords, nodes)
     pool.close()
@@ -176,7 +175,8 @@ class deterministic: #aqui vai o nome do plugin
         nan_filter = nan_filter == 1
 
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
-        coords_matrix = np.vstack((x,y,z)).T  
+        coords_matrix = np.vstack((x,y,z)).T 
+        ncpus = multiprocessing.cpu_count() 
 
         if len(variograms) == 1:
             print('Interpolating using the same covarinace model for all variables')
@@ -186,7 +186,7 @@ class deterministic: #aqui vai o nome do plugin
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
                 print('Interpolating RT {}'.format(rt))
-                results = global_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx])
+                results = global_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx], ncpus)
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -197,7 +197,7 @@ class deterministic: #aqui vai o nome do plugin
                 print('Interpolating using one covarinace model per variables')
                 print('Interpolating RT {}'.format(rt))
                 lhs_inv = lhs(coords_matrix, variograms[idx])
-                results = global_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx])
+                results = global_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx], ncpus)
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
