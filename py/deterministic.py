@@ -11,6 +11,7 @@ import ar2gas
 from itertools import product
 import time
 from pathos.pools import ProcessPool
+import multiprocessing
 
 #################################################################################################
 
@@ -95,7 +96,8 @@ def global_krig(coords, grid, cov, lhs_inv, var):
     else:
         mask = np.ones(grid.size())
     nodes = grid.locations()
-    pool = ProcessPool(nodes=4)
+    ncpus = multiprocessing.cpu_count()
+    pool = ProcessPool(nodes=ncpus-1)
     results = pool.map(matrix_operations, krig_cov, coords, nodes)
     pool.close()
     print(results)
