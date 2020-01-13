@@ -9,6 +9,8 @@ from scipy.interpolate import NearestNDInterpolator
 from scipy.spatial.distance import cdist
 import ar2gas
 from itertools import product
+import time
+import pathos.multiprocessing as mp
 
 #################################################################################################
 
@@ -60,36 +62,47 @@ def nn(x, y, z, var, grid):
 
 def lhs(coords_matrix, cov):
     print('Calculating LHS matrix...')
+    t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     n = len(coords_matrix)
     ones = np.ones((n+1, n+1))
     lhs = krig_cov.lhs(coords_matrix)
-    print(lhs)
     ones[:-1,:-1] = lhs
     ones[n,n] = 0
+    t2 = time.time()
+    print('Took {} seconds'.format(t2-t1))
     print('Inverting LHS matrix...')
+    t1 = time.time()
     lhs_inv = np.linalg.inv(ones)
+    t2 = time.time()
+    print('Took {} seconds'.format(t2-t1))
     return lhs_inv
 
+def matrix_operations(krig_cov, coords, node):
+    rhs = krig_cov.rhs(coords, node)
+    #print(rhs)
+    rhs = np.append(rhs, 0)
+    w = np.dot(rhs, lhs_inv).T
+    z = np.dot(w, var)
+    return z
+
 def global_krig(coords, grid, cov, lhs_inv, var):
+    t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     var = np.append(var, 0)
     if hasattr(grid, 'mask'):
         mask = grid.mask()
-        mask = np.where(mask == True, 1, 0)
     else:
         mask = np.ones(grid.size())
     nodes = grid.locations()
-    result = np.ones(grid.size())*float('nan')
-    for idx, maskval in enumerate(mask):
-        if idx%1000 == 0:
-            print('Interpolating node {}'.format(idx))
-        if maskval == 1:
-            rhs = krig_cov.rhs(coords, nodes[idx])
-            rhs = np.append(rhs, 0)
-            w = np.dot(rhs, lhs_inv).T
-            z = np.dot(w, var)
-            result[idx] = z
+    n_threads = mp.cpu_count()
+    print("Number of processors: ", n_threads)
+    pool = mp.Pool(n_threads)
+    results = [pool.apply(matrix_operations, args=(krig_cov, coords, node)) for node in nodes]
+    pool.close()
+    print(results)
+    t2 = time.time()
+    print('Took {} seconds'.format(t2-t1))
     return result
 
 #################################################################################################
@@ -161,7 +174,6 @@ class deterministic: #aqui vai o nome do plugin
             variables.append(values)
         nan_filter = np.product(nan_filters, axis=0)
         nan_filter = nan_filter == 1
-        print(nan_filter)
 
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
         coords_matrix = np.vstack((x,y,z)).T  
