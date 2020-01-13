@@ -25,7 +25,7 @@ User must choose the variables type (indicators or signed distances), add and se
 ### Transformations
 There are transformations for the gridded properties too.
 
-#### Softmax
+#### Softmax transfomration
 
 #### Entropy
 
@@ -36,5 +36,7 @@ There are transformations for the gridded properties too.
 ## Optimizationn
 
 ## VTK export
+
+## Auto grid
 
 ## What can be done?
