@@ -4,8 +4,6 @@ from itertools import product
 import numpy as np
 
 def anis_dist(p0, p1, r1, r2, alpha, beta, gamma):
-    
-
     if alpha >= 0 and alpha <=270:
         alpha = np.deg2rad(90-alpha)
     else:
