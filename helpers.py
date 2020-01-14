@@ -3,7 +3,11 @@ import sgems
 from itertools import product
 import numpy as np
 
+#################################################for an eventual use#################################################
+
 def anis_dist(p0, p1, r1, r2, alpha, beta, gamma):
+    
+
     if alpha >= 0 and alpha <=270:
         alpha = np.deg2rad(90-alpha)
     else:
@@ -43,6 +47,9 @@ def gaussian(h, a):
 def exponential(h, a):
     variance = np.exp(-h/a)
     return variance
+
+#################################################for an eventual use#################################################
+
 
 def modelfile_to_ar2gasmodel(path):
     f = open(path, "r")
