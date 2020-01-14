@@ -9,7 +9,7 @@ This is a geologic modeling suite plugins for AR2GEMS using signed distances fun
 
 If everything goes well you will see LPM-Geomod_Suite in the algorithms pannel.
 
-![Algo pannel](images/algo_pannel.png)
+![Algo pannel](images/algo_pannel.PNG)
 
 ## Transformations 
 Tranformations are straightforward. User needs to select the categorical rock type property.
