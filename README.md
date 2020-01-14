@@ -20,8 +20,6 @@ Creates one signed distances property for each property.
 ## Deterministic
 This plugin will create a deterministic geological model from indicators or signed distances properties. The interpolation method is dual kriging which is global it can take too long on big datasets. iterations options will refine the grid defining a refinement zone from a marching cube.
 
-User must choose the variables type (indicators or signed distances), add and select a variogram model and a code for each category.
-
 ### Transformations
 There are transformations for the gridded properties too.
 
@@ -37,6 +35,10 @@ There are transformations for the gridded properties too.
 
 ## VTK export
 
+This plugin exports point sets and/or grids in VTK format. Esported files can be opened with [Paraview](www.paraview.org).
+
 ## Auto grid
+
+Auto grid creates automatically a grid which covers the point set given the block dimensions and a buffer size.
 
 ## What can be done?
