@@ -2,8 +2,11 @@
 This is a geologic modeling suite plugins for AR2GEMS using signed distances functions and indicators.
 
 ## Installation
-Run install_dependencies.py script from run script inside AR2GEMS.  
-Paste the ui folder content to plugins\Geostat AR2GEMS folder and py folder content to plugins\Geostat\python AR2GEMS folder. helpers.py should go on Lib AR2GEMS folder.
+* Run *install_dependencies.py* script on python terminal in AR2GEMS folder;  
+* Paste the ui folder content to *plugins\Geostat* AR2GEMS folder; 
+* Paste py folder content to *plugins\Geostat\python* AR2GEMS folder; 
+* Paste *helpers.py* in Lib AR2GEMS folder.
+
 If everything goes well you will see LPM-Geomod_Suite in the algorithms pannel.
 
 ![Algo pannel](images/algo_pannel.png)
@@ -35,7 +38,7 @@ There are transformations for the gridded properties too.
 
 ## VTK export
 
-This plugin exports point sets and/or grids in VTK format. Esported files can be opened with [Paraview](www.paraview.org).
+This plugin exports point sets and/or grids in VTK format. Esported files can be opened with [Paraview](http://www.paraview.org).
 
 ## Auto grid
 
