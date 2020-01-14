@@ -3,6 +3,49 @@ import sgems
 from itertools import product
 import numpy as np
 
+def anis_dist(p0, p1, r1, r2, alpha, beta, gamma):
+    
+
+    if alpha >= 0 and alpha <=270:
+        alpha = np.deg2rad(90-alpha)
+    else:
+        alpha = np.deg2rad(450-alpha)
+    
+    beta, gamma = np.deg2rad(beta), np.deg2rad(gamma)
+    
+    R = np.array([
+    [np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), -np.sin(beta)],
+    [1/r1 * (-np.cos(gamma)*np.sin(alpha)+np.sin(gamma)*np.sin(beta)*np.cos(alpha)), 1/r1 * (np.cos(gamma)*np.cos(alpha)+np.sin(gamma)*np.sin(beta)*np.sin(alpha)), 1/r1 * (np.sin(gamma)*np.cos(beta))],
+    [1/r2 * (np.sin(gamma)*np.sin(alpha)+np.cos(gamma)*np.cos(beta)*np.cos(alpha)), 1/r2 * (-np.sin(gamma)*np.cos(alpha)+np.cos(gamma)*np.sin(beta)*np.sin(alpha)), 1/r2 * (np.cos(gamma)*np.cos(beta))]
+    ])
+    
+    p1_minus_p0 = np.array([
+        [p1[0] - p0[0]],
+        [p1[1] - p0[1]],
+        [p1[2] - p0[2]]
+    ])
+        
+    o1 = np.dot(p1_minus_p0.T, R.T)
+    o2 = np.dot(o1,R)
+    o3 = np.dot(o2, p1_minus_p0)
+    
+    return np.sqrt(o3)[0][0]
+
+def spherical(h, a):
+    if h < a:
+        variance = 1-(3/2)*(h/a)+(1/2)*(h/a)**3
+    else:
+        variance = 1
+    return variance
+
+def gaussian(h, a):
+    variance = np.exp(-(h/a)**2)
+    return variance
+
+def exponential(h, a):
+    variance = np.exp(-h/a)
+    return variance
+
 def modelfile_to_ar2gasmodel(path):
     f = open(path, "r")
     lines = f.readlines()
