@@ -252,6 +252,13 @@
             </property>
            </widget>
           </item>
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="checkBox_2">
+            <property name="text">
+             <string>Keep all variables</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0" colspan="2">
            <widget class="GridSelector" name="gridselector">
             <property name="sizePolicy">
@@ -262,11 +269,24 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QCheckBox" name="checkBox_2">
-            <property name="text">
-             <string>Keep all variables</string>
+          <item row="5" column="0" colspan="2">
+           <widget class="QComboBox" name="comboBox_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
+            <item>
+             <property name="text">
+              <string>Dual kriging</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Global Kriging</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
