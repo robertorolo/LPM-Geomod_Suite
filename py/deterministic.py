@@ -4,6 +4,7 @@
 #importe aqui os pacotes necessarios
 import sgems
 import numpy as np
+np.set_printoptions(threshold=np.inf)
 import helpers
 from scipy.interpolate import NearestNDInterpolator
 import ar2gas
@@ -89,7 +90,7 @@ def matrices_operations(krig_cov, coords, node): #can be used in paralelization
     z = np.dot(w, var)
     return z
 
-def build_points_to_grid_nodes_matrix(coords, nodes, cov):
+def rhs(coords, nodes, cov):
     print('Building RHS matrix...')
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     t1 = time.time()
@@ -124,11 +125,9 @@ def global_krig(grid, lhs_inv, rhs, var):
         results = np.ones(len(mask))*float('nan')
         mg_idx = 0
         for idx, maskval in enumerate(mask):
-            if maskval == 1:
+            if maskval == True:
                 results[idx] = partial_results[mg_idx]
                 mg_idx = mg_idx+1
-        results = partial_results
-
     else:
         results = partial_results
     
@@ -154,11 +153,9 @@ def dual_krig(grid, lhs_inv, rhs, var):
         results = np.ones(len(mask))*float('nan')
         mg_idx = 0
         for idx, maskval in enumerate(mask):
-            if maskval == 1:
+            if maskval == True:
                 results[idx] = partial_results[mg_idx]
                 mg_idx = mg_idx+1
-        results = partial_results
-
     else:
         results = partial_results
     
@@ -232,28 +229,28 @@ class deterministic: #aqui vai o nome do plugin
         for v in var_names:
             values = np.array(sgems.get_property(props_grid_name, v))
             nan_filter = np.isfinite(values)
-            values = np.array(sgems.get_property(props_grid_name, v))[nan_filter]
+            filtered_values = values[nan_filter]
             nan_filters.append(nan_filter)
-            variables.append(values)
+            variables.append(filtered_values)
         nan_filter = np.product(nan_filters, axis=0)
         nan_filter = nan_filter == 1
 
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
-        coords_matrix = np.vstack((x,y,z)).T 
+        coords_matrix = np.vstack((x,y,z)).T
 
         if len(variograms) == 1:
             print('Interpolating using the same covarinace model for all variables')
             cov = list(variograms.values())[0]
             lhs_inv = lhs(coords_matrix, cov)
-            rhs = build_points_to_grid_nodes_matrix(coords_matrix, nodes, cov)
+            rhs_var = rhs(coords_matrix, nodes, cov)
 
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
                 print('Interpolating RT {}'.format(rt))
                 if krig_type == "Dual kriging":
-                    results = dual_krig(a2g_grid, lhs_inv, rhs, variables[idx])
+                    results = dual_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
                 else:
-                    results = global_krig(a2g_grid, lhs_inv, rhs, variables[idx])
+                    results = global_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -264,11 +261,11 @@ class deterministic: #aqui vai o nome do plugin
                 print('Interpolating using one covarinace model per variables')
                 print('Interpolating RT {}'.format(rt))
                 lhs_inv = lhs(coords_matrix, variograms[rt])
-                rhs = build_points_to_grid_nodes_matrix(coords_matrix, nodes, variograms[rt])
+                rhs_var = rhs(coords_matrix, nodes, variograms[rt])
                 if krig_type == "Dual kriging":
-                    results = dual_krig(a2g_grid, lhs_inv, rhs, variables[idx])
+                    results = dual_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
                 else:
-                    results = global_krig(a2g_grid, lhs_inv, rhs, variables[idx])
+                    results = global_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
