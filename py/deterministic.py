@@ -80,7 +80,6 @@ def lhs(coords_matrix, cov, global_krig=False):
     lhs_inv = np.linalg.inv(ones)
     t2 = time.time()
     print('Took {} seconds'.format(t2-t1))
-    
     return lhs_inv
 
 def matrices_operations(krig_cov, coords, node): #can be used in paralelization
@@ -92,25 +91,23 @@ def matrices_operations(krig_cov, coords, node): #can be used in paralelization
 
 def build_points_to_grid_nodes_matrix(coords, nodes, cov):
     print('Building RHS matrix...')
+    krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     t1 = time.time()
     n = len(nodes)
     i = 0
     mat = []
     for pp, pg in product(coords, nodes):
-        mat.append(cov.compute(pg, pp))
+        mat.append(krig_cov.compute(pg, pp))
     mat = np.array(mat).reshape((len(coords), len(nodes)))
     t2 = time.time()
     print('Took {} seconds'.format(t2-t1))
     return mat
 
-def global_krig(coords, grid, cov, lhs_inv, var):
+def global_krig(grid, lhs_inv, rhs, var):
     t1 = time.time()
-    krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     var = np.append(var, 0)
-    nodes = grid.locations()
-    mat = build_points_to_grid_nodes_matrix(coords, nodes, krig_cov)
-    zeros = np.zeros((len(coords)+1, len(nodes)))
-    zeros[:-1,:] = mat
+    zeros = np.zeros((rhs.shape[0]+1, rhs.shape[1]))
+    zeros[:-1,:] = rhs
     print('Computing weights...')
     t1 = time.time()
     weights = np.dot(lhs_inv, zeros)
@@ -139,8 +136,7 @@ def global_krig(coords, grid, cov, lhs_inv, var):
     print('Took {} seconds'.format(t2-t1))
     return results
 
-def dual_krig(coords, grid, cov, lhs_inv, var):
-    krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
+def dual_krig(grid, lhs_inv, rhs, var):
     var = np.append(var, 0)
     print('Computing weights...')
     t1 = time.time()
@@ -148,11 +144,9 @@ def dual_krig(coords, grid, cov, lhs_inv, var):
     print('Sum of wehigths: {}'.format(np.sum(weights[:-1])))
     t2 = time.time()
     print('Took {} seconds'.format(t2-t1))
-    nodes = grid.locations()
-    mat = build_points_to_grid_nodes_matrix(coords, nodes, krig_cov)
     print('Computing results by dual kriging...')
     t1 = time.time()
-    partial_results = np.dot(mat.T, weights[:-1]) + weights[-1:]
+    partial_results = np.dot(rhs.T, weights[:-1]) + weights[-1:]
 
     if hasattr(grid, 'mask'):
         mask = grid.mask()
@@ -231,6 +225,7 @@ class deterministic: #aqui vai o nome do plugin
             
         #interpolating variables
         a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
+        nodes = a2g_grid.locations()
         
         variables = []
         nan_filters = []
@@ -250,14 +245,15 @@ class deterministic: #aqui vai o nome do plugin
             print('Interpolating using the same covarinace model for all variables')
             cov = list(variograms.values())[0]
             lhs_inv = lhs(coords_matrix, cov)
+            rhs = build_points_to_grid_nodes_matrix(coords_matrix, nodes, cov)
 
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
                 print('Interpolating RT {}'.format(rt))
                 if krig_type == "Dual kriging":
-                    results = dual_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx])
+                    results = dual_krig(a2g_grid, lhs_inv, rhs, variables[idx])
                 else:
-                    results = global_krig(coords_matrix, a2g_grid, cov, lhs_inv, variables[idx])
+                    results = global_krig(a2g_grid, lhs_inv, rhs, variables[idx])
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -267,11 +263,12 @@ class deterministic: #aqui vai o nome do plugin
                 rt = codes[idx]
                 print('Interpolating using one covarinace model per variables')
                 print('Interpolating RT {}'.format(rt))
-                lhs_inv = lhs(coords_matrix, variograms[idx])
+                lhs_inv = lhs(coords_matrix, variograms[rt])
+                rhs = build_points_to_grid_nodes_matrix(coords_matrix, nodes, variograms[rt])
                 if krig_type == "Dual kriging":
-                    results = dual_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx])
+                    results = dual_krig(a2g_grid, lhs_inv, rhs, variables[idx])
                 else:
-                    results = global_krig(coords_matrix, a2g_grid, variograms[rt], lhs_inv, variables[idx])
+                    results = global_krig(a2g_grid, lhs_inv, rhs, variables[idx])
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
