@@ -65,7 +65,6 @@ def nn(x, y, z, var, grid):
     return results
 
 def lhs(coords_matrix, cov, global_krig=False):
-    
     print('Calculating LHS matrix...')
     t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
@@ -85,7 +84,7 @@ def lhs(coords_matrix, cov, global_krig=False):
     return lhs_inv
 
 def matrices_operations(krig_cov, coords, node): #can be used in paralelization
-    rhs = krig_cov.rhs(coords, node) #this methos is not working
+    rhs = krig_cov.rhs(coords, node) #this method is not working
     rhs = np.append(rhs, 0)
     w = np.dot(rhs, lhs_inv).T
     z = np.dot(w, var)
@@ -114,8 +113,8 @@ def global_krig(coords, grid, cov, lhs_inv, var):
     zeros[:-1,:] = mat
     print('Computing weights...')
     t1 = time.time()
-    weights = np.dot(np.linalg.inv(lhs_inv), zeros)
-    print('Sum of wehigths: {}'.format(np.sum(weights)))
+    weights = np.dot(lhs_inv, zeros)
+    print('Sum of wehigths: {}'.format(np.sum(weights[:-1])))
     t2 = time.time()
     print('Took {} seconds'.format(t2-t1))
     print('Computing results by global kriging...')
@@ -145,8 +144,8 @@ def dual_krig(coords, grid, cov, lhs_inv, var):
     var = np.append(var, 0)
     print('Computing weights...')
     t1 = time.time()
-    weights = np.dot(np.linalg.inv(lhs_inv), var)
-    print('Sum of wehigths: {}'.format(np.sum(weights)))
+    weights = np.dot(lhs_inv, var)
+    print('Sum of wehigths: {}'.format(np.sum(weights[:-1])))
     t2 = time.time()
     print('Took {} seconds'.format(t2-t1))
     nodes = grid.locations()
