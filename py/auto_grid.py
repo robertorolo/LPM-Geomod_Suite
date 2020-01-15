@@ -52,10 +52,10 @@ class auto_grid: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
