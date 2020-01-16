@@ -28,7 +28,11 @@ There are transformations for the gridded properties too.
 
 #### Softmax transfomration
 
+Softmax transforms interpolated distances into probabilities or correct order relations issues with interpolated indicators properties. The gamma parameter control the magnitude of the uncertainty.
+
 #### Entropy
+
+Entropy is calculated from probabilities properties. It returns a single property that measures multicategorical uncertainty. It basically delineates the contacts.
 
 ## Stochastic
 
