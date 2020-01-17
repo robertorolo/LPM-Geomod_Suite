@@ -238,6 +238,8 @@ class deterministic: #aqui vai o nome do plugin
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
         coords_matrix = np.vstack((x,y,z)).T
 
+        interpolated_variables = []
+
         if len(variograms) == 1:
             print('Interpolating using the same covarinace model for all variables')
             cov = list(variograms.values())[0]
@@ -249,8 +251,11 @@ class deterministic: #aqui vai o nome do plugin
                 print('Interpolating RT {}'.format(rt))
                 if krig_type == "Dual kriging":
                     results = dual_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
+                    interpolated_variables.append(results)
                 else:
                     results = global_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
+                    interpolated_variables.append(results)
+
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -264,8 +269,10 @@ class deterministic: #aqui vai o nome do plugin
                 rhs_var = rhs(coords_matrix, nodes, variograms[rt])
                 if krig_type == "Dual kriging":
                     results = dual_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
+                    interpolated_variables.append(results)
                 else:
                     results = global_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
+                    interpolated_variables.append(results)
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                     sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -273,6 +280,19 @@ class deterministic: #aqui vai o nome do plugin
         print('Finished interpolating!')
 
         #creating a geologic model
+        print('Creating a geologic model...')
+        if var_type == 'Indicators':
+            
+            if len(interpolated_variables) == 1:
+                nn_results = nn(x, y, z, variables[0], a2g_grid)
+                if keep_variables == '1':
+                    prop_name = 'nn_'+str(codes[0])
+                    sgems.set_property(tg_grid_name, prop_name, nn_results.tolist())
+                proportion = sum(nn_results==1)/len(nn_results)
+                print('Cutting-off interpolated indicator property in {}'.format(proportion.round(2)))
+                q = np.quantile(interpolated_variables[0], (1 - proportion))
+                solid = np.where(interpolated_variables[0] > q, 1, 0)
+                sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
         return True
 
