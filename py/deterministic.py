@@ -41,7 +41,7 @@ def marching_cubes(grid):
         indices_list = []        
         for j, i in product(range_y, range_x):       
             cube = np.array([[i,j,0],[i,j+1,0],[i+1,j+1,0],[i+1,j,0],[i,j,0],[i,j+1,0],[i+1,j+1,0],[i+1,j,0]])
-            indices = [ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
+            indices = [helpers.ijk_in_n(grid, e[0], e[1], e[2]) for e in cube]
             indices_list.append(indices)
     
     return indices_list
@@ -83,19 +83,10 @@ def lhs(coords_matrix, cov, global_krig=False):
     print('Took {} seconds'.format(t2-t1))
     return lhs_inv
 
-def matrices_operations(krig_cov, coords, node): #can be used in paralelization
-    rhs = krig_cov.rhs(coords, node) #this method is not working
-    rhs = np.append(rhs, 0)
-    w = np.dot(rhs, lhs_inv).T
-    z = np.dot(w, var)
-    return z
-
 def rhs(coords, nodes, cov):
     print('Building RHS matrix...')
     krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
     t1 = time.time()
-    n = len(nodes)
-    i = 0
     mat = []
     for pp, pg in product(coords, nodes):
         mat.append(krig_cov.compute(pg, pp))
