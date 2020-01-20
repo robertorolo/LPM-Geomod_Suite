@@ -223,12 +223,28 @@
    <slot>show_properties(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>189</x>
-     <y>54</y>
+     <x>212</x>
+     <y>97</y>
     </hint>
     <hint type="destinationlabel">
-     <x>187</x>
-     <y>93</y>
+     <x>210</x>
+     <y>188</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>filechooser_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>39</x>
+     <y>460</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>42</x>
+     <y>475</y>
     </hint>
    </hints>
   </connection>
