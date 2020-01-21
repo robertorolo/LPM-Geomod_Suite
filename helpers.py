@@ -154,21 +154,24 @@ def ijk_in_n(grid, i, j, k):
     n = k*dims[0]*dims[1]+j*dims[0]+i
     return n
 
-def downscale_property(grid, prop, fx, fy, fz):
+def downscale_properties(grid, props, fx, fy, fz):
     downscaled_grid = ar2gas.data.downscale_cartesian_grid(grid, fx, fy, fz)
-    downscaled_prop = np.zeros(downscaled_grid.size())
-    for i in range(grid.size()):
-        value = prop[i]
-        ijk = grid.ijk(i)
-        di = [i for i in range(ijk[0]*fx, ijk[0]*fx+fx)]
-        dj = [j for j in range(ijk[1]*fy, ijk[1]*fy+fy)]
-        dk = [k for k in range(ijk[2]*fz, ijk[2]*fz+fz)]
-        
-        for i, j, k in product(di, dj, dk):
-            n = ijk_in_n(downscaled_grid, i, j, k)
-            downscaled_prop[n] = value
+    downscaled_props = []
+    for p in props:
+        downscaled_prop = np.zeros(downscaled_grid.size())
+        for i in range(grid.size()):
+            value = p[i]
+            ijk = grid.ijk(i)
+            di = [i for i in range(ijk[0]*fx, ijk[0]*fx+fx)]
+            dj = [j for j in range(ijk[1]*fy, ijk[1]*fy+fy)]
+            dk = [k for k in range(ijk[2]*fz, ijk[2]*fz+fz)]
             
-    return downscaled_grid, downscaled_prop.tolist()
+            for i, j, k in product(di, dj, dk):
+                n = ijk_in_n(downscaled_grid, i, j, k)
+                downscaled_prop[n] = value
+        downscaled_props.append(downscaled_prop)
+            
+    return downscaled_grid, downscaled_props
 
 def nn(x, y, z, var, grid):
     nan_mask = np.isfinite(var)
