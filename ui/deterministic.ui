@@ -284,12 +284,12 @@
             </item>
             <item>
              <property name="text">
-              <string>Global Kriging</string>
+              <string>Global kriging</string>
              </property>
             </item>
             <item>
              <property name="text">
-              <string>Ar2gas Dual Kriging </string>
+              <string>Ar2gas dual kriging </string>
              </property>
             </item>
            </widget>
