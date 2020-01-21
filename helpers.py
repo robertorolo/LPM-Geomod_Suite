@@ -2,6 +2,7 @@ import ar2gas
 import sgems
 from itertools import product
 import numpy as np
+from scipy.interpolate import NearestNDInterpolator
 
 #################################################for an eventual use#################################################
 
@@ -168,3 +169,12 @@ def downscale_property(grid, prop, fx, fy, fz):
             downscaled_prop[n] = value
             
     return downscaled_grid, downscaled_prop.tolist()
+
+def nn(x, y, z, var, grid):
+    nan_mask = np.isfinite(var)
+    points_array = np.vstack((x,y,z)).T
+    knn = NearestNDInterpolator(points_array[nan_mask], var[nan_mask])
+    grids_points_array = grid.locations()
+    results = knn(grids_points_array)
+
+    return results
