@@ -46,6 +46,7 @@ def marching_cubes(grid):
     return indices_list
 
 def refinement_zone(grid, geomodel):
+    geomodel = np.array(geomodel)
     refinement_prop = geomodel.copy()
     indices_list = marching_cubes(grid)
     for indice_list in indices_list:
@@ -65,12 +66,12 @@ def lhs(coords_matrix, cov, global_krig=False):
     ones[:-1,:-1] = lhs
     ones[n,n] = 0
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     print('Inverting LHS matrix...')
     t1 = time.time()
     lhs_inv = np.linalg.inv(ones)
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     return lhs_inv
 
 def rhs(coords, nodes, cov):
@@ -82,7 +83,7 @@ def rhs(coords, nodes, cov):
         mat.append(krig_cov.compute(pg, pp))
     mat = np.array(mat).reshape((len(coords), len(nodes)))
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     return mat
 
 def global_krig(grid, lhs_inv, rhs, var):
@@ -93,9 +94,9 @@ def global_krig(grid, lhs_inv, rhs, var):
     print('Computing weights...')
     t1 = time.time()
     weights = np.dot(lhs_inv, zeros)
-    print('Sum of wehigths: {}'.format(np.sum(weights[:-1])))
+    print('Sum of wehigths: {}'.format(round(np.sum(weights[:-1])), 2))
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     print('Computing results by global kriging...')
     t1 = time.time()
     partial_results = np.dot(var, weights)
@@ -113,7 +114,7 @@ def global_krig(grid, lhs_inv, rhs, var):
         results = partial_results
     
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     return results
 
 def dual_krig(grid, lhs_inv, rhs, var):
@@ -121,9 +122,9 @@ def dual_krig(grid, lhs_inv, rhs, var):
     print('Computing weights...')
     t1 = time.time()
     weights = np.dot(lhs_inv, var)
-    print('Sum of wehigths: {}'.format(np.sum(weights[:-1])))
+    print('Sum of wehigths: {}'.format(round(np.sum(weights[:-1])), 2))
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     print('Computing results by dual kriging...')
     t1 = time.time()
     partial_results = np.dot(rhs.T, weights[:-1]) + weights[-1:]
@@ -141,7 +142,7 @@ def dual_krig(grid, lhs_inv, rhs, var):
         results = partial_results
     
     t2 = time.time()
-    print('Took {} seconds'.format(t2-t1))
+    print('Took {} seconds'.format(round((t2-t1),2)))
     return results
 
 #################################################################################################
@@ -156,10 +157,10 @@ class deterministic: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        #print("dicionario de parametros: ", params)
+        print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        #read_params(params) #para nao printar comente essa linha
+        read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -222,7 +223,7 @@ class deterministic: #aqui vai o nome do plugin
         interpolated_variables = []
 
         if len(variograms) == 1:
-            print('Interpolating using the same covarinace model for all variables')
+            print('Interpolating using the same covariance model for all variables')
             cov = list(variograms.values())[0]
             lhs_inv = lhs(coords_matrix, cov)
             rhs_var = rhs(coords_matrix, nodes, cov)
@@ -244,7 +245,7 @@ class deterministic: #aqui vai o nome do plugin
         else:
             for idx, v in enumerate(var_names):
                 rt = codes[idx]
-                print('Interpolating using one covarinace model per variables')
+                print('Interpolating using one covariance model per variables')
                 print('Interpolating RT {}'.format(rt))
                 lhs_inv = lhs(coords_matrix, variograms[rt])
                 rhs_var = rhs(coords_matrix, nodes, variograms[rt])
@@ -283,6 +284,7 @@ class deterministic: #aqui vai o nome do plugin
                 print('Geologic model created!')
 
         else:
+
             if len(interpolated_variables) == 1:
                 solid = np.where(interpolated_variables[0] < 0, 1, 0)
                 sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
@@ -293,6 +295,24 @@ class deterministic: #aqui vai o nome do plugin
                 geomodel = [float(codes[i]) for i in arg_max_array]
                 sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
                 print('Geologic model created!')
+
+        #Refining model
+        iterations = int(self.params['iterations']['value'])
+        fx, fy, fz = int(self.params['fx']['value']), int(self.params['fy']['value']), int(self.params['fz']['value'])
+        
+        if  iterations > 0:
+
+            for i in range(iterations):
+                print('Refinemnt iteration {}'.format(i+1))
+                print('Defining refinment zone...')
+                ref_zone, indices = refinement_zone(a2g_grid, geomodel)
+                if keep_variables == '1':
+                    sgems.set_property(tg_grid_name, 'refinemnt zone iteration {}'.format(i+1) , ref_zone.tolist())
+                
+                downscaled_grid, downscaled_ref_zone = helpers.downscale_property(a2g_grid, ref_zone, fx, fy, fz)
+                if tg_region_name != '':
+                    region = sgems.get_region(tg_grid_name, tg_region_name)
+                    downscaled_grid, downscaled_region = helpers.downscale_property(a2g_grid, region, fx, fy, fz)
 
 
         return True
