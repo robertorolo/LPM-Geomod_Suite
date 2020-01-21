@@ -302,7 +302,7 @@
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBox_5">
          <property name="title">
-          <string>variogram model files</string>
+          <string>Variogram model files</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
