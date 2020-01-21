@@ -6,7 +6,6 @@ import sgems
 import numpy as np
 np.set_printoptions(threshold=np.inf)
 import helpers
-from scipy.interpolate import NearestNDInterpolator
 import ar2gas
 from itertools import product
 import time
@@ -55,15 +54,6 @@ def refinement_zone(grid, geomodel):
             refinement_prop[indice_list] = -999
 
     return refinement_prop, indices_list
-
-def nn(x, y, z, var, grid):
-    nan_mask = np.isfinite(var)
-    points_array = np.vstack((x,y,z)).T
-    knn = NearestNDInterpolator(points_array[nan_mask], var[nan_mask])
-    grids_points_array = grid.locations()
-    results = knn(grids_points_array)
-
-    return results
 
 def lhs(coords_matrix, cov, global_krig=False):
     print('Calculating LHS matrix...')
@@ -275,7 +265,7 @@ class deterministic: #aqui vai o nome do plugin
         if var_type == 'Indicators':
             
             if len(interpolated_variables) == 1:
-                nn_results = nn(x, y, z, variables[0], a2g_grid)
+                nn_results = helpers.nn(x, y, z, variables[0], a2g_grid)
                 if keep_variables == '1':
                     prop_name = 'nn_'+str(codes[0])
                     sgems.set_property(tg_grid_name, prop_name, nn_results.tolist())
