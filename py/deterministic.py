@@ -386,6 +386,7 @@ class deterministic: #aqui vai o nome do plugin
                 geomodel = final_geomodel
 
             helpers.ar2gasprop_to_ar2gems(grid, 'refined_grid'+tg_prop_name, geomodel, tg_prop_name)
+            print('Finished!')
 
         return True
 
