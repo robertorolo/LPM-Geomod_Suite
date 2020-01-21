@@ -275,6 +275,26 @@ class deterministic: #aqui vai o nome do plugin
                 solid = np.where(interpolated_variables[0] > q, 1, 0)
                 sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
+            else:
+                variables = np.array(interpolated_variables)
+                arg_max_array = variables.argmax(axis=0)
+                geomodel = [float(codes[i]) for i in arg_max_array]
+                sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
+                print('Geologic model created!')
+
+        else:
+            if len(interpolated_variables) == 1:
+                solid = np.where(interpolated_variables[0] < 0, 1, 0)
+                sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
+
+            else:
+                variables = np.array(interpolated_variables)
+                arg_max_array = variables.argmin(axis=0)
+                geomodel = [float(codes[i]) for i in arg_max_array]
+                sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
+                print('Geologic model created!')
+
+
         return True
 
 #################################################################################################
