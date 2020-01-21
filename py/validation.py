@@ -46,7 +46,7 @@ def cat_plot(target, weights, reals, path):
     plt.ylabel('Proportion')
     plt.xlabel('Categories')
     plt.xticks(list(cat_dict.keys()))
-    plotting realizations boxplots
+    #plotting realizations boxplots
     reals_props = prop_reals(reals, cats)
     plt.boxplot(reals_props.values(), positions=cats)
     plt.savefig(path)
