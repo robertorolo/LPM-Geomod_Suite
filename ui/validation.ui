@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>424</width>
     <height>675</height>
    </rect>
   </property>
@@ -181,12 +181,36 @@
      </widget>
     </widget>
    </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Select rock type property</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="0">
+       <widget class="PropertySelectorNoRegion" name="propertyselectornoregion">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
   <customwidget>
    <class>GridSelectorBasic</class>
    <extends>QComboBox</extends>
+   <header>qtplugins/selectors.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PropertySelectorNoRegion</class>
+   <extends>QWidget</extends>
    <header>qtplugins/selectors.h</header>
   </customwidget>
   <customwidget>
