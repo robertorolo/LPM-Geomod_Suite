@@ -372,30 +372,20 @@ class deterministic: #aqui vai o nome do plugin
                 print('Finished interpolating!')
 
                 print('Creating a geologic model...')
-                if var_type == 'Indicators':
-                    
-                    variables = np.array(interpolated_variables)
-                    arg_max_array = variables.argmax(axis=0)
-                    geomodel_region = [float(codes[i]) for i in arg_max_array]
-                    print('Geologic model created!')
-
-                else:
-                        
-                    variables = np.array(interpolated_variables)
-                    arg_max_array = variables.argmin(axis=0)
-                    geomodel_region = [float(codes[i]) for i in arg_max_array]
-                    print('Geologic model created!')
-
-                final_geomodel = downscaled_props[1].copy()
-                idx_gr = 0
-                for idx, v in enumerate(downscaled_props[0]):
-                    if v == -999:
-                        final_geomodel[idx] = float(geomodel_region[idx_gr])
-                        idx_gr = idx_gr + 1
+                final_geomodel = []
+                idx = 0
+                for i in np.array(interpolated_variables).T:
+                    if np.isnan(i).all():
+                        final_geomodel.append(float(downscaled_props[1][idx]))
+                        idx=idx+1
+                    else:
+                        index = i.argmin(axis=0) if var_type == 'Indicators' is False else i.argmax(axis=0)
+                        final_geomodel.append(float(codes[index]))
+                        idx=idx+1
 
                 geomodel = final_geomodel
 
-            helpers.ar2gasprop_to_ar2gems(grid, 'refined_grid'+tg_prop_name, geomodel.tolist(), tg_prop_name)
+            helpers.ar2gasprop_to_ar2gems(grid, 'refined_grid'+tg_prop_name, geomodel, tg_prop_name)
 
         return True
 
