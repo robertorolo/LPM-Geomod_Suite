@@ -287,6 +287,11 @@
               <string>Global Kriging</string>
              </property>
             </item>
+            <item>
+             <property name="text">
+              <string>Ar2gas Dual Kriging </string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
