@@ -157,10 +157,10 @@ class deterministic: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -277,8 +277,8 @@ class deterministic: #aqui vai o nome do plugin
                 sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
             else:
-                variables = np.array(interpolated_variables)
-                arg_max_array = variables.argmax(axis=0)
+                int_variables = np.array(interpolated_variables)
+                arg_max_array = int_variables.argmax(axis=0)
                 geomodel = [float(codes[i]) for i in arg_max_array]
                 sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
                 print('Geologic model created!')
@@ -290,8 +290,8 @@ class deterministic: #aqui vai o nome do plugin
                 sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
             else:
-                variables = np.array(interpolated_variables)
-                arg_max_array = variables.argmin(axis=0)
+                int_variables = np.array(interpolated_variables)
+                arg_max_array = int_variables.argmin(axis=0)
                 geomodel = [float(codes[i]) for i in arg_max_array]
                 sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
                 print('Geologic model created!')
@@ -302,18 +302,100 @@ class deterministic: #aqui vai o nome do plugin
         
         if  iterations > 0:
 
+            if len(variables) == 1:
+                print('Sorry! Refinemnt works only for multicategorical models.')
+                return False
+
+            grid = a2g_grid
+            geomodel = geomodel
+            if tg_region_name != '':
+                region = sgems.get_region(tg_grid_name, tg_region_name)
+
             for i in range(iterations):
                 print('Refinemnt iteration {}'.format(i+1))
                 print('Defining refinment zone...')
-                ref_zone, indices = refinement_zone(a2g_grid, geomodel)
+                ref_zone, indices = refinement_zone(grid, geomodel)
+                prop = ref_zone
                 if keep_variables == '1':
                     sgems.set_property(tg_grid_name, 'refinemnt zone iteration {}'.format(i+1) , ref_zone.tolist())
                 
-                downscaled_grid, downscaled_ref_zone = helpers.downscale_property(a2g_grid, ref_zone, fx, fy, fz)
                 if tg_region_name != '':
-                    region = sgems.get_region(tg_grid_name, tg_region_name)
-                    downscaled_grid, downscaled_region = helpers.downscale_property(a2g_grid, region, fx, fy, fz)
+                    downscaled_grid, downscaled_props = helpers.downscale_properties(grid, [ref_zone, geomodel, region], fx, fy, fz)
+                    region = downscaled_props[2]
+                else:
+                    downscaled_grid, downscaled_props = helpers.downscale_properties(grid, [ref_zone, geomodel], fx, fy, fz)
+                grid = downscaled_grid
 
+                mask = downscaled_props[0] == -999 if tg_region_name == '' else downscaled_props[0] == -999 and downscaled_props[2] == 0
+                masked_grid = ar2gas.data.MaskedGrid(downscaled_grid, mask)
+                masked_nodes = masked_grid.locations()
+
+                interpolated_variables = []
+
+                if len(variograms) == 1:
+                    print('Interpolating using the same covariance model for all variables')
+                    cov = list(variograms.values())[0]
+                    lhs_inv = lhs(coords_matrix, cov)
+                    rhs_var = rhs(coords_matrix, masked_nodes, cov)
+
+                    for idx, v in enumerate(var_names):
+                        rt = codes[idx]
+                        print('Interpolating RT {}'.format(rt))
+                        if krig_type == "Dual kriging":
+                            results = dual_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
+                            interpolated_variables.append(results)
+                        else:
+                            results = global_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
+                            interpolated_variables.append(results)
+
+                        if keep_variables == '1':
+                            prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
+                            sgems.set_property(tg_grid_name, prop_name, results.tolist())
+
+                else:
+                    for idx, v in enumerate(var_names):
+                        rt = codes[idx]
+                        print('Interpolating using one covariance model per variables')
+                        print('Interpolating RT {}'.format(rt))
+                        lhs_inv = lhs(coords_matrix, variograms[rt])
+                        rhs_var = rhs(coords_matrix, masked_nodes, variograms[rt])
+                        if krig_type == "Dual kriging":
+                            results = dual_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
+                            interpolated_variables.append(results)
+                        else:
+                            results = global_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
+                            interpolated_variables.append(results)
+                        if keep_variables == '1':
+                            prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
+                            sgems.set_property(tg_grid_name, prop_name, results.tolist())
+
+                print('Finished interpolating!')
+
+                print('Creating a geologic model...')
+                if var_type == 'Indicators':
+                    
+                    variables = np.array(interpolated_variables)
+                    arg_max_array = variables.argmax(axis=0)
+                    geomodel_region = [float(codes[i]) for i in arg_max_array]
+                    print('Geologic model created!')
+
+                else:
+                        
+                    variables = np.array(interpolated_variables)
+                    arg_max_array = variables.argmin(axis=0)
+                    geomodel_region = [float(codes[i]) for i in arg_max_array]
+                    print('Geologic model created!')
+
+                final_geomodel = downscaled_props[1].copy()
+                idx_gr = 0
+                for idx, v in enumerate(downscaled_props[0]):
+                    if v == -999:
+                        final_geomodel[idx] = float(geomodel_region[idx_gr])
+                        idx_gr = idx_gr + 1
+
+                geomodel = final_geomodel
+
+            helpers.ar2gasprop_to_ar2gems(grid, 'refined_grid'+tg_prop_name, geomodel.tolist(), tg_prop_name)
 
         return True
 
