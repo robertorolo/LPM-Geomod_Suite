@@ -382,9 +382,13 @@ class deterministic: #aqui vai o nome do plugin
                     downscaled_grid, downscaled_props = helpers.downscale_properties(grid, [ref_zone, geomodel, np.array(region)], fx, fy, fz)
                     region = downscaled_props[2]
                     m1 = np.array(downscaled_props[0] == -999)
-                    m2 = np.array(downscaled_props[2] == 0)
+                    m2 = np.array(downscaled_props[2] == 1)
                     mask =  m1*m2
-                    mask = np.where(mask==1, True, False).tolist() 
+                    mask = np.where(mask==1, True, False).tolist()
+                    nx, ny, nz = downscaled_grid.dim()[0], downscaled_grid.dim()[1], downscaled_grid.dim()[2]
+                    sx, sy, sz = downscaled_grid.cell_size()[0], downscaled_grid.cell_size()[1], downscaled_grid.cell_size()[2]
+                    ox, oy, oz = downscaled_grid.origin()[0], downscaled_grid.origin()[1], downscaled_grid.origin()[2]
+                    downscaled_grid = ar2gas.data.CartesianGrid(nx, ny, nz, sx, sy, sz, ox, oy, oz) 
                 else:
                     downscaled_grid, downscaled_props = helpers.downscale_properties(grid, [ref_zone, geomodel], fx, fy, fz)
                     mask = downscaled_props[0] == -999
