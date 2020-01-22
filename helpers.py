@@ -142,6 +142,13 @@ def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
         
     return grid
 
+def ar2gasgrid_to_ar2gems(grid_name, grid):
+    sgems.execute('NewCartesianGrid  {}::{}::{}::{}::{}::{}::{}::{}::{}::{}::0,00'.format(grid_name,
+                                                                                          grid.dim()[0], grid.dim()[1], grid.dim()[2],
+                                                                                          grid.cell_size()[0], grid.cell_size()[1], grid.cell_size()[2],
+                                                                                          grid.origin()[0], grid.origin()[1], grid.origin()[2]))
+
+
 def ar2gasprop_to_ar2gems(grid, grid_name, prop, prop_name):
     sgems.execute('NewCartesianGrid  {}::{}::{}::{}::{}::{}::{}::{}::{}::{}::0,00'.format(grid_name,
                                                                                           grid.dim()[0], grid.dim()[1], grid.dim()[2],
@@ -156,13 +163,18 @@ def ijk_in_n(grid, i, j, k):
 
 def downscale_properties(grid, props, fx, fy, fz):
     if hasattr(grid, 'mask'):
+        original_size = grid.size_of_mask()
         downscaled_grid = ar2gas.data.downscale_masked_grid(grid, fx, fy, fz)
+        downscaled_size = downscaled_grid.size_of_mask()
     else:
+        original_size = grid.size()
         downscaled_grid = ar2gas.data.downscale_cartesian_grid(grid, fx, fy, fz)
+        downscaled_size = downscaled_grid.size()
     downscaled_props = []
+    grid = ar2gas.data.CartesianGrid(grid.dim()[0], grid.dim()[1], grid.dim()[2], 1, 1, 1, 0, 0, 0) #bug fixing
     for p in props:
-        downscaled_prop = np.zeros(downscaled_grid.size())
-        for i in range(grid.size()):
+        downscaled_prop = np.zeros(downscaled_size)
+        for i in range(original_size):
             value = p[i]
             ijk = grid.ijk(i)
             di = [i for i in range(ijk[0]*fx, ijk[0]*fx+fx)]
