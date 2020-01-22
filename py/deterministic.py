@@ -145,6 +145,18 @@ def dual_krig(grid, lhs_inv, rhs, var):
     print('Took {} seconds'.format(round((t2-t1),2)))
     return results
 
+def ar2gas_dual_krig(cov, x, y, z, prop, grid):
+    t1 = time.time()
+    krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
+    ps = ar2gas.data.PointSet(x, y, z)
+    estimator = ar2gas.compute.DualKriging.OK(krig_cov, ps, prop, 0)
+    #nodes = grid.locations()
+    tp = np.ones(grid.size())*float('nan')
+    estimator.compute(grid, tp, 0)
+    t2 = time.time()
+    print('Took {} seconds'.format(round((t2-t1),2)))
+    return tp
+
 #################################################################################################
 
 class deterministic: #aqui vai o nome do plugin
@@ -234,8 +246,11 @@ class deterministic: #aqui vai o nome do plugin
                 if krig_type == "Dual kriging":
                     results = dual_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
                     interpolated_variables.append(results)
-                else:
+                if krig_type == 'Global kriging':
                     results = global_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
+                    interpolated_variables.append(results)
+                else:
+                    results = ar2gas_dual_krig(cov, x, y, z, variables[idx], a2g_grid)
                     interpolated_variables.append(results)
 
                 if keep_variables == '1':
@@ -252,8 +267,11 @@ class deterministic: #aqui vai o nome do plugin
                 if krig_type == "Dual kriging":
                     results = dual_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
                     interpolated_variables.append(results)
-                else:
+                if krig_type == "Global kriging":
                     results = global_krig(a2g_grid, lhs_inv, rhs_var, variables[idx])
+                    interpolated_variables.append(results)
+                else:
+                    results = ar2gas_dual_krig(variograms[rt], x, y, z, variables[idx], a2g_grid)
                     interpolated_variables.append(results)
                 if keep_variables == '1':
                     prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
@@ -277,9 +295,17 @@ class deterministic: #aqui vai o nome do plugin
                 sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
             else:
-                int_variables = np.array(interpolated_variables)
-                arg_max_array = int_variables.argmax(axis=0)
-                geomodel = [float(codes[i]) for i in arg_max_array]
+                int_variables = np.array(interpolated_variables).T
+                geomodel = []
+                idx = 0
+                for i in int_variables:
+                    if np.isnan(i).all():
+                        geomodel.append(float('nan'))
+                        idx=idx+1
+                    else:
+                        index = i.argmax(axis=0)
+                        geomodel.append(float(codes[index]))
+                        idx=idx+1
                 sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
                 print('Geologic model created!')
 
@@ -290,9 +316,17 @@ class deterministic: #aqui vai o nome do plugin
                 sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
             else:
-                int_variables = np.array(interpolated_variables)
-                arg_max_array = int_variables.argmin(axis=0)
-                geomodel = [float(codes[i]) for i in arg_max_array]
+                int_variables = np.array(interpolated_variables).T
+                geomodel = []
+                idx = 0
+                for i in int_variables:
+                    if np.isnan(i).all():
+                        geomodel.append(float('nan'))
+                        idx=idx+1
+                    else:
+                        index = i.argmin(axis=0)
+                        geomodel.append(float(codes[index]))
+                        idx=idx+1
                 sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
                 print('Geologic model created!')
 
@@ -344,10 +378,12 @@ class deterministic: #aqui vai o nome do plugin
                         if krig_type == "Dual kriging":
                             results = dual_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
                             interpolated_variables.append(results)
-                        else:
+                        if krig_type == 'Global kriging':
                             results = global_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
                             interpolated_variables.append(results)
-
+                        else:
+                            results = ar2gas_dual_krig(cov, x, y, z, variables[idx], masked_grid)
+                            interpolated_variables.append(results)
                         if keep_variables == '1':
                             prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                             sgems.set_property(tg_grid_name, prop_name, results.tolist())
@@ -362,8 +398,11 @@ class deterministic: #aqui vai o nome do plugin
                         if krig_type == "Dual kriging":
                             results = dual_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
                             interpolated_variables.append(results)
-                        else:
+                        if krig_type == 'Global kriging':
                             results = global_krig(masked_grid, lhs_inv, rhs_var, variables[idx])
+                            interpolated_variables.append(results)
+                        else:
+                            results = ar2gas_dual_krig(variograms[rt], x, y, z, variables[idx], masked_grid)
                             interpolated_variables.append(results)
                         if keep_variables == '1':
                             prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)

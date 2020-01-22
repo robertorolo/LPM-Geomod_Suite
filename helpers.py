@@ -155,7 +155,10 @@ def ijk_in_n(grid, i, j, k):
     return n
 
 def downscale_properties(grid, props, fx, fy, fz):
-    downscaled_grid = ar2gas.data.downscale_cartesian_grid(grid, fx, fy, fz)
+    if hasattr(grid, 'mask'):
+        downscaled_grid = ar2gas.data.downscale_masked_grid(grid, fx, fy, fz)
+    else:
+        downscaled_grid = ar2gas.data.downscale_cartesian_grid(grid, fx, fy, fz)
     downscaled_props = []
     for p in props:
         downscaled_prop = np.zeros(downscaled_grid.size())
