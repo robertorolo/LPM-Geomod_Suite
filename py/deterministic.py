@@ -145,10 +145,11 @@ def dual_krig(grid, lhs_inv, rhs, var):
     print('Took {} seconds'.format(round((t2-t1),2)))
     return results
 
+'''
 def ar2gas_dual_krig(cov, x, y, z, prop, grid):
-    if hasattr(grid, 'mask'):
-        print('ar2gas dual krig do not works with masked grids.')
-        return False
+    #if hasattr(grid, 'mask'):
+    #    print('ar2gas dual krig do not works with masked grids.')
+    #    return False
     t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
     ps = ar2gas.data.PointSet(x, y, z)
@@ -158,17 +159,41 @@ def ar2gas_dual_krig(cov, x, y, z, prop, grid):
     t2 = time.time()
     print('Took {} seconds'.format(round((t2-t1),2)))
     return tp
+'''
+
+def ar2gas_dual_krig(cov, x, y, z, prop, grid):
+    print('Interpolating by OK using ar2gas for testing purposes...')
+    t1 = time.time()
+    krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
+    ps = ar2gas.data.PointSet(x, y, z)
+    anis = ar2gas.data.AnisotropicTransformation(1.0e10, 1.0e10, 1.0e10, 0,0,0)
+    tree = ar2gas.data.KDTree(ps, 32, anis)
+    sf = ar2gas.data.SearchFilter.no_filter()
+    estimator = ar2gas.compute.Kriging.OK(krig_cov, tree, sf, prop)
+    tp = np.ones(grid.size_of_mask())*float('nan')
+    results = estimator.compute(grid, 0)
+    mask = grid.mask()
+    r_idx = 0
+    for idx, val in enumerate(mask):
+        if val == True:
+            tp[idx] = results[r_idx]
+            r_idx = r_idx + 1
+    t2 = time.time()
+    print('Took {} seconds'.format(round((t2-t1),2)))
+    return tp
 
 def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name):
     coords_matrix = np.vstack((x,y,z)).T
     nodes = grid.locations()
     interpolated_variables = []
+    print(krig_type)  
 
     if len(variograms) == 1:
         print('Interpolating using the same covariance model for all variables')
         cov = list(variograms.values())[0]
-        lhs_inv = lhs(coords_matrix, cov)
-        rhs_var = rhs(coords_matrix, nodes, cov)
+        if krig_type != 'Ar2gas dual kriging ':
+            lhs_inv = lhs(coords_matrix, cov)
+            rhs_var = rhs(coords_matrix, nodes, cov)  
 
         for idx, v in enumerate(variables):
             rt = codes[idx]
@@ -192,8 +217,10 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
             rt = codes[idx]
             print('Interpolating using one covariance model per variables')
             print('Interpolating RT {}'.format(rt))
-            lhs_inv = lhs(coords_matrix, variograms[rt])
-            rhs_var = rhs(coords_matrix, nodes, variograms[rt])
+            if krig_type != 'Ar2gas dual kriging ':
+                lhs_inv = lhs(coords_matrix, variograms[rt])
+                rhs_var = rhs(coords_matrix, nodes, variograms[rt])
+            
             if krig_type == "Dual kriging":
                 results = dual_krig(grid, lhs_inv, rhs_var, v)
                 interpolated_variables.append(results)
