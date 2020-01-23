@@ -21,36 +21,6 @@ def read_params(a,j=''):
         else:
             read_params(a[i],j+"['"+str(i)+"']")
 
-def prop_reals(reals, cats):
-  props = {}
-  for c in cats:
-    cat_props = []
-    for r in reals:
-      cat_filter = np.array(r) == c
-      real_prop = len(np.array(r)[cat_filter])/len(r)
-      cat_props.append(real_prop)
-    props[c] = cat_props
-  return props
-
-def cat_plot(target, weights, reals, path):
-    #plotting target declustered histogram
-    weights = np.array(weights) if weights is not None else np.array([1/len(target)] * len(target))
-    cats = np.unique(target)
-    cat_dict = {}
-    for c in cats:
-        mask = target == c
-        height = weights[mask].sum()
-        cat_dict[c] = height
-    plt.figure(figsize=(5,8))
-    plt.bar(cat_dict.keys(), cat_dict.values())
-    plt.ylabel('Proportion')
-    plt.xlabel('Categories')
-    plt.xticks(list(cat_dict.keys()))
-    #plotting realizations boxplots
-    reals_props = prop_reals(reals, cats)
-    plt.boxplot(reals_props.values(), positions=cats)
-    plt.savefig(path)
-
 #################################################################################################
 
 class validation: #aqui vai o nome do plugin
@@ -88,43 +58,6 @@ class validation: #aqui vai o nome do plugin
         nan_filter = np.isfinite(rt_prop)
         rt_prop_filterd = rt_prop[nan_filter]
         codes = np.unique(rt_prop_filterd)
-
-        #transforming grid to ar2gas grid
-        a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(grid_name, '')
-
-        #getting declustered rt
-        x, y, z = np.array(sgems.get_X(rt_grid_name))[nan_filter], np.array(sgems.get_Y(rt_grid_name))[nan_filter], np.array(sgems.get_Z(rt_grid_name))[nan_filter]
-        nn_results = helpers.nn(x, y, z, rt_prop_filterd, a2g_grid)
-
-        #getting reals props 
-        realizations = []
-        for v in props_names:
-            values =  np.array(sgems.get_property(grid_name, v))
-            realizations.append(values)
-
-        #getting variograms
-        print('Getting variogram models')
-        use_model_file = self.params['checkBox']['value'] 
-        if use_model_file == '1':
-            path = self.params['filechooser']['value']
-            variograms = helpers.modelfile_to_ar2gasmodel(path)
-            if len(variograms) == 1:
-                values_covs = list(variograms.values())
-                varg_lst = values_covs * len(codes)
-                variograms = {}
-                variograms[0] = varg_lst[0]
-        else:
-            p = self.params
-            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(p)
-            if len(varg_lst) == 1:
-                varg_lst = varg_lst * len(codes)
-                variograms = {}
-                variograms[0] = varg_lst[0]
-            else:
-                variograms = dict(zip(codes, varg_lst))
-
-        #saving histogram
-        cat_plot(nn_results, None, realizations, path)
 
         return True
 

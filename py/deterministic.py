@@ -145,42 +145,26 @@ def dual_krig(grid, lhs_inv, rhs, var):
     print('Took {} seconds'.format(round((t2-t1),2)))
     return results
 
-'''
+
 def ar2gas_dual_krig(cov, x, y, z, prop, grid):
-    #if hasattr(grid, 'mask'):
-    #    print('ar2gas dual krig do not works with masked grids.')
-    #    return False
+    print('Computing results by ar2gas dual kriging...')
     t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
     ps = ar2gas.data.PointSet(x, y, z)
     estimator = ar2gas.compute.DualKriging.OK(krig_cov, ps, prop, 0)
-    tp = np.ones(grid.size())*float('nan')
-    estimator.compute(grid, tp, 0)
+    tp = np.ones(grid.size_of_mask())*float('nan') if hasattr(grid, 'mask') else np.ones(grid.size())*float('nan')
+    results = np.ones(grid.size())*float('nan')
+    estimator.compute(grid, results, 0)
+    if hasattr(grid, 'mask'):
+        mask = grid.mask()
+        r_idx = 0
+        for idx, val in enumerate(mask):
+            if val == True:
+                tp[idx] = results[r_idx]
+                r_idx = r_idx + 1
+    else:
+        tp=results
     t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1),2)))
-    return tp
-'''
-
-def ar2gas_dual_krig(cov, x, y, z, prop, grid):
-    print('Interpolating by OK using ar2gas for testing purposes...')
-    t1 = time.time()
-    krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
-    ps = ar2gas.data.PointSet(x, y, z)
-    anis = ar2gas.data.AnisotropicTransformation(1.0e10, 1.0e10, 1.0e10, 0,0,0)
-    tree = ar2gas.data.KDTree(ps, 32, anis)
-    sf = ar2gas.data.SearchFilter.no_filter()
-    estimator = ar2gas.compute.Kriging.OK(krig_cov, tree, sf, prop)
-    tp = np.ones(grid.size_of_mask())*float('nan')
-    results = estimator.compute(grid, 0)
-    
-    mask = grid.mask()
-    r_idx = 0
-    for idx, val in enumerate(mask):
-        if val == True:
-            tp[idx] = results[r_idx]
-            r_idx = r_idx + 1
-    t2 = time.time()
-    
     print('Took {} seconds'.format(round((t2-t1),2)))
     return tp
 
@@ -188,7 +172,6 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
     coords_matrix = np.vstack((x,y,z)).T
     nodes = grid.locations()
     interpolated_variables = []
-    print(krig_type)  
 
     if len(variograms) == 1:
         print('Interpolating using the same covariance model for all variables')
