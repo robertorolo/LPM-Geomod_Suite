@@ -5,7 +5,6 @@
 import sgems
 import numpy as np
 import helpers
-import matplotlib.pyplot as plt
 
 #################################################################################################
 
