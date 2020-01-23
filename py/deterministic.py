@@ -172,6 +172,7 @@ def ar2gas_dual_krig(cov, x, y, z, prop, grid):
     estimator = ar2gas.compute.Kriging.OK(krig_cov, tree, sf, prop)
     tp = np.ones(grid.size_of_mask())*float('nan')
     results = estimator.compute(grid, 0)
+    
     mask = grid.mask()
     r_idx = 0
     for idx, val in enumerate(mask):
@@ -179,6 +180,7 @@ def ar2gas_dual_krig(cov, x, y, z, prop, grid):
             tp[idx] = results[r_idx]
             r_idx = r_idx + 1
     t2 = time.time()
+    
     print('Took {} seconds'.format(round((t2-t1),2)))
     return tp
 
