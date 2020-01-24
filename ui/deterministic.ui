@@ -279,17 +279,17 @@
             </property>
             <item>
              <property name="text">
+              <string>Ar2gas dual kriging </string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>Dual kriging</string>
              </property>
             </item>
             <item>
              <property name="text">
               <string>Global kriging</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Ar2gas dual kriging </string>
              </property>
             </item>
            </widget>
