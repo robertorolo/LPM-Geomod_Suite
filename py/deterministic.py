@@ -405,7 +405,7 @@ class deterministic: #aqui vai o nome do plugin
                     downscaled_grid, downscaled_props = helpers.downscale_properties(grid, [ref_zone, geomodel], fx, fy, fz)
                     mask = downscaled_props[0] == -999
                 grid = downscaled_grid
-                grid_name = tg_grid_name+'iteration_{}'.format(i+1)
+                grid_name = tg_grid_name+'_'+tg_prop_name+'_iteration_{}'.format(i+1)
                 helpers.ar2gasgrid_to_ar2gems(grid_name, grid)
 
                 masked_grid = ar2gas.data.MaskedGrid(downscaled_grid, mask)
