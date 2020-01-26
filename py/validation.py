@@ -70,7 +70,6 @@ class validation: #aqui vai o nome do plugin
         nan_filter = np.isfinite(rt_prop)
         rt_prop_filterd = rt_prop[nan_filter]
         codes = np.unique(rt_prop_filterd)
-        my_codes_string = ','.join(map(str, codes.astype(int))) 
 
         #calculating target proportions
         x, y, z = np.array(sgems.get_X(rt_grid_name)), np.array(sgems.get_Y(rt_grid_name)), np.array(sgems.get_Z(rt_grid_name))
@@ -97,20 +96,19 @@ import matplotlib.pyplot as plt
 
 cat_dict = {}
 reals_props = {}
-cats = [{}]
 
-def cat_plot(cat_dict, reals_props, cats):
+def cat_plot(cat_dict, reals_props):
     #plotting target declustered histogram
     plt.bar(cat_dict.keys(), cat_dict.values(), color='gray')
     plt.ylabel('Proportion')
     plt.xlabel('Categories')
     plt.xticks(cats)
     #plotting realizations boxplots
-    plt.boxplot(reals_props.values(), positions=cats)
+    plt.boxplot(reals_props.values(), positions=cat_dict.keys())
     plt.savefig('{}')
 
-cat_plot(cat_dict, reals_props, cats)
-        '''.format(cat_dict, reals_props, my_codes_string, hist_path)
+cat_plot(cat_dict, reals_props)
+        '''.format(cat_dict, reals_props, hist_path)
 
         #writing script
         f = open(scipt_path, 'w')
