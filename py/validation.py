@@ -106,7 +106,7 @@ def cat_plot(cat_dict, reals_props):
     plt.xlabel('Categories')
     plt.xticks(list(cat_dict.keys()))
     #plotting realizations boxplots
-    plt.boxplot(reals_props.values(), positions=cat_dict.keys())
+    plt.boxplot(reals_props.values(), positions=positions=list(cat_dict.keys()))
     plt.savefig('{}')
 
 cat_plot(cat_dict, reals_props)
