@@ -96,13 +96,15 @@ import matplotlib.pyplot as plt
 
 cat_dict = {}
 reals_props = {}
+colors = ['r','g','b','k','y','m','c']
 
 def cat_plot(cat_dict, reals_props):
     #plotting target declustered histogram
-    plt.bar(cat_dict.keys(), cat_dict.values(), color='gray')
+    n = len(list(cat_dict.keys()))
+    plt.bar(cat_dict.keys(), cat_dict.values(), color=colors[:n])
     plt.ylabel('Proportion')
     plt.xlabel('Categories')
-    plt.xticks(cats)
+    plt.xticks(list(cat_dict.keys()))
     #plotting realizations boxplots
     plt.boxplot(reals_props.values(), positions=cat_dict.keys())
     plt.savefig('{}')
