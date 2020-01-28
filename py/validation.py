@@ -5,6 +5,7 @@
 import sgems
 import numpy as np
 import helpers
+import ar2gas
 
 #################################################################################################
 
@@ -64,6 +65,7 @@ class validation: #aqui vai o nome do plugin
         hist_path = path+'_hist_reproduction'
         rt_grid_name = self.params['propertyselectornoregion']['grid']
         rt_prop_name = self.params['propertyselectornoregion']['property']
+        n_var = int(self.params['indicator_regionalization_input']['number_of_indicator_group'])
 
         #getting codes
         rt_prop = np.array(sgems.get_property(rt_grid_name, rt_prop_name))
@@ -94,9 +96,76 @@ class validation: #aqui vai o nome do plugin
         #calculating variograms
         #experimental variograms
         print('Calculating variogrmas...')
-        exp_vars_ew = [ar2gas.compute_variogram(grid, data, (1, 0, 0), nlags, (0, 0, 0), 0) for data in reals]
-        exp_vars_sn = [ar2gas.compute_variogram(grid, data, (0, 1, 0), nlags, (0, 0, 0), 0) for data in reals]
-        exp_vars_sn = [ar2gas.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in reals]
+        #getting variograms
+        print('Getting variogram models')
+        use_model_file = self.params['checkBox']['value'] 
+        if use_model_file == '1':
+            path = self.params['filechooser']['value']
+            variograms = helpers.modelfile_to_ar2gasmodel(path)
+            if len(variograms) == 1:
+                values_covs = list(variograms.values())
+                varg_lst = values_covs * len(codes)
+                variograms = {}
+                variograms[0] = varg_lst[0]
+        else:
+            p = self.params
+            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(p)
+            if len(varg_lst) == 1:
+                varg_lst = varg_lst * len(codes)
+                variograms = {}
+                variograms[0] = varg_lst[0]
+            else:
+                variograms = dict(zip(codes, varg_lst))
+        
+        exp_vars_dict = {'ew':{}, 'ns':{}, 'z':{}}
+        var_model_dict = {'ew':{}, 'ns':{}, 'z':{}}
+        sx, sy, sz = grid.dim()[0], grid.dim()[1], grid.dim()[2]
+        rangeinx, rangeiny, rangeinz = [i*sx for i in range(0,nlags+1)], [i*sy for i in range(0,nlags+1)], [i*sx for i in range(0,nlags+1)]
+
+        print('Calculating experimental variograms...')
+        for c in codes:
+ 
+            indicators = np.array(reals) == c
+            indicators = np.where(indicators==True, 1, 0)
+
+            exp_vars_ew = [ar2gas.compute.compute_variogram(grid, data, (1, 0, 0), nlags, (0, 0, 0), 0) for data in indicators]
+            exp_vars_dict['ew'][c] = exp_vars_ew
+
+            exp_vars_ns = [ar2gas.compute.compute_variogram(grid, data, (0, 1, 0), nlags, (0, 0, 0), 0) for data in indicators]
+            exp_vars_dict['ns'][c] = exp_vars_ns
+
+            exp_vars_z = [ar2gas.compute.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in indicators]
+            exp_vars_dict['z'][c] = exp_vars_z
+
+        print('Calculating variogram models...')
+        if n_var == 1:
+            c =0 
+            cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
+            
+            model_var_ew = [cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
+            var_model_dict['ew'][c] = model_var_ew
+
+            model_var_ns = [cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
+            var_model_dict['ns'][c] = model_var_ns
+
+            model_var_z = [cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
+            var_model_dict['z'][c] = model_var_z
+        
+        else:
+            for c in codes:
+                cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
+            
+                model_var_ew = [cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
+                var_model_dict['ew'][c] = model_var_ew
+
+                model_var_ns = [cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
+                var_model_dict['ns'][c] = model_var_ns
+
+                model_var_z = [cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
+                var_model_dict['z'][c] = model_var_z
+
+        print(var_model_dict)
+        print(exp_vars_dict)
 
         script = '''
 import numpy as np
@@ -114,7 +183,7 @@ def cat_plot(cat_dict, reals_props):
     plt.xlabel('Categories')
     plt.xticks(list(cat_dict.keys()))
     #plotting realizations boxplots
-    plt.boxplot(reals_props.values(), positions=positions=list(cat_dict.keys()))
+    plt.boxplot(reals_props.values(), positions=list(cat_dict.keys()))
     plt.savefig('{}')
 
 cat_plot(cat_dict, reals_props)
