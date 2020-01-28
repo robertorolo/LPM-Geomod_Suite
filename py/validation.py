@@ -71,7 +71,8 @@ class validation: #aqui vai o nome do plugin
         rt_prop_filterd = rt_prop[nan_filter]
         codes = np.unique(rt_prop_filterd)
 
-        #calculating target proportions
+        #calculating proportions
+        print('Calculating proportions...')
         x, y, z = np.array(sgems.get_X(rt_grid_name)), np.array(sgems.get_Y(rt_grid_name)), np.array(sgems.get_Z(rt_grid_name))
         values = np.array(sgems.get_property(rt_grid_name, rt_prop_name))
         grid = helpers.ar2gemsgrid_to_ar2gasgrid(grid_name, '')
@@ -89,6 +90,13 @@ class validation: #aqui vai o nome do plugin
             reals.append(values)
 
         reals_props = prop_reals(reals, codes)
+        
+        #calculating variograms
+        #experimental variograms
+        print('Calculating variogrmas...')
+        exp_vars_ew = [ar2gas.compute_variogram(grid, data, (1, 0, 0), nlags, (0, 0, 0), 0) for data in reals]
+        exp_vars_sn = [ar2gas.compute_variogram(grid, data, (0, 1, 0), nlags, (0, 0, 0), 0) for data in reals]
+        exp_vars_sn = [ar2gas.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in reals]
 
         script = '''
 import numpy as np
