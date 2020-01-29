@@ -63,6 +63,7 @@ class validation: #aqui vai o nome do plugin
         path = self.params['filechooser']['value']
         scipt_path = path+'.py'
         hist_path = path+'_hist_reproduction'
+        varg_path = path+'_varg_reproduction'
         rt_grid_name = self.params['propertyselectornoregion']['grid']
         rt_prop_name = self.params['propertyselectornoregion']['property']
         n_var = int(self.params['indicator_regionalization_input']['number_of_indicator_group'])
@@ -164,8 +165,7 @@ class validation: #aqui vai o nome do plugin
                 model_var_z = [cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
                 var_model_dict['z'][c] = model_var_z
 
-        print(var_model_dict)
-        print(exp_vars_dict)
+        print('Validation script saved at seleted folder!')
 
         script = '''
 import numpy as np
@@ -187,7 +187,33 @@ def cat_plot(cat_dict, reals_props):
     plt.savefig('{}')
 
 cat_plot(cat_dict, reals_props)
-        '''.format(cat_dict, reals_props, hist_path)
+
+var_exp = {}
+var_model = {}
+model_keys = np.array(list(cat_dict.keys()))
+ranges = [{}, {}, {}]
+codes = list(cat_dict.keys())
+
+def plt_vargs(var_exp, var_model):
+	for c in codes:
+		flname = '{}'+'_'+str(c)
+		fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
+		for idx, d in enumerate(['ew', 'ns', 'z']):
+			if np.all(model_keys):	
+				axes[idx].plot(ranges[idx], var_model[d][0], color='red')
+			else:
+				axes[idx].plot(ranges[idx], var_model[d][c], color='red')
+			for r in var_exp[d][c]:
+				axes[idx].plot(ranges[idx], r, color='gray')
+				axes[idx].set_xlabel('lag distance')
+				axes[idx].set_ylabel('Variance')
+				axes[idx].set_title('Direction '+str(d))
+				axes[idx].grid(True)
+		#fig.title('Variogram '+str(int(c)))
+		fig.savefig(flname)
+		
+plt_vargs(var_exp, var_model)
+        '''.format(cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path)
 
         #writing script
         f = open(scipt_path, 'w')
