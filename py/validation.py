@@ -142,27 +142,29 @@ class validation: #aqui vai o nome do plugin
         if n_var == 1:
             c =0 
             cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
+            sill = cov.compute([0,0,0],[0,0,0])
             
-            model_var_ew = [cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
+            model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
             var_model_dict['ew'][c] = model_var_ew
 
-            model_var_ns = [cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
+            model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
             var_model_dict['ns'][c] = model_var_ns
 
-            model_var_z = [cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
+            model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
             var_model_dict['z'][c] = model_var_z
         
         else:
             for c in codes:
                 cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
+                sill = cov.compute([0,0,0],[0,0,0])
             
-                model_var_ew = [cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
+                model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
                 var_model_dict['ew'][c] = model_var_ew
 
-                model_var_ns = [cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
+                model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
                 var_model_dict['ns'][c] = model_var_ns
 
-                model_var_z = [cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
+                model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
                 var_model_dict['z'][c] = model_var_z
 
         print('Validation script saved at seleted folder!')
