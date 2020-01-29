@@ -73,6 +73,15 @@ class validation: #aqui vai o nome do plugin
         nan_filter = np.isfinite(rt_prop)
         rt_prop_filterd = rt_prop[nan_filter]
         codes = np.unique(rt_prop_filterd)
+        
+        #calculating reals proportions
+        reals = []
+        for v in props_names:
+            values = np.array(sgems.get_property(grid_name, v))
+            reals.append(values)
+
+        reals_props = prop_reals(reals, codes)
+        nan_mask = np.isnan(reals[0])
 
         #calculating proportions
         print('Calculating proportions...')
@@ -80,19 +89,17 @@ class validation: #aqui vai o nome do plugin
         values = np.array(sgems.get_property(rt_grid_name, rt_prop_name))
         grid = helpers.ar2gemsgrid_to_ar2gasgrid(grid_name, '')
         target = helpers.nn(x, y, z, values, grid)
+        #adding nan to target 
+        for idx, i in enumerate(nan_mask):
+            if i is True:
+                target[idx] = float('nan')
+                
         cat_dict = {}
         w = np.array([1/len(target)] * len(target))
         for c in codes:
             mask = target == c
             height = w[mask].sum()
             cat_dict[int(c)] = height
-
-        reals = []
-        for v in props_names:
-            values = np.array(sgems.get_property(grid_name, v))
-            reals.append(values)
-
-        reals_props = prop_reals(reals, codes)
         
         #calculating variograms
         #experimental variograms
