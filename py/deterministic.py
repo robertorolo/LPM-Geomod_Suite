@@ -172,6 +172,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
     coords_matrix = np.vstack((x,y,z)).T
     nodes = grid.locations()
     interpolated_variables = []
+    print([variograms[int(rt)][1].angles() for rt in codes])
 
     if len(variograms) == 1:
         print('Interpolating using the same covariance model for all variables')
@@ -181,7 +182,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
             rhs_var = rhs(coords_matrix, nodes, cov)  
 
         for idx, v in enumerate(variables):
-            rt = float(codes[idx])
+            rt = int(codes[idx])
             print('Interpolating RT {}'.format(rt))
             if krig_type == "Dual kriging":
                 results = dual_krig(grid, lhs_inv, rhs_var, v)
@@ -199,7 +200,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
 
     else:
         for idx, v in enumerate(variables):
-            rt = float(codes[idx])
+            rt = int(codes[idx])
             print('Interpolating using one covariance model per variables')
             print('Interpolating RT {}'.format(rt))
             if krig_type != 'Ar2gas dual kriging ':
