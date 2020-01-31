@@ -113,8 +113,8 @@ class validation: #aqui vai o nome do plugin
         print('Getting variogram models')
         use_model_file = self.params['checkBox']['value'] 
         if use_model_file == '1':
-            path = self.params['filechooser']['value']
-            variograms = helpers.modelfile_to_ar2gasmodel(path)
+            var_path = self.params['filechooser_2']['value']
+            variograms = helpers.modelfile_to_ar2gasmodel(var_path)
             if len(variograms) == 1:
                 values_covs = list(variograms.values())
                 varg_lst = values_covs * len(codes)
@@ -151,7 +151,7 @@ class validation: #aqui vai o nome do plugin
             exp_vars_dict['z'][c] = exp_vars_z
 
         print('Calculating variogram models...')
-        if n_var == 1:
+        if np.sum(np.array(list(variograms.keys()))) == 0:
             c =0 
             cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
             sill = cov.compute([0,0,0],[0,0,0])
@@ -218,7 +218,7 @@ codes = list(cat_dict.keys())
 
 def plt_vargs(var_exp, var_model):
     for c in codes:
-        flname = 'C:/Users/robertomr/Documents/Testes/valid_varg_reproduction'+'_'+str(c)
+        flname = 'C:/Users/robertomr/Documents/Testes/varg_reproduction'+'_'+str(c)
         fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
         for idx, d in enumerate(['ew', 'ns', 'z']):
             #if np.all(model_keys):	
