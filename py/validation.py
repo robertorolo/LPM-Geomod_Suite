@@ -6,6 +6,7 @@ import sgems
 import numpy as np
 import helpers
 import ar2gas
+from sklearn.metrics import confusion_matrix
 
 #################################################################################################
 
@@ -64,6 +65,7 @@ class validation: #aqui vai o nome do plugin
         scipt_path = path+'.py'
         hist_path = path+'_hist_reproduction'
         varg_path = path+'_varg_reproduction'
+        con_mat_path = path+'_confusion_matrix'
         rt_grid_name = self.params['propertyselectornoregion']['grid']
         rt_prop_name = self.params['propertyselectornoregion']['property']
         n_var = int(self.params['indicator_regionalization_input']['number_of_indicator_group'])
@@ -85,10 +87,13 @@ class validation: #aqui vai o nome do plugin
 
         #calculating proportions
         print('Calculating proportions...')
-        x, y, z = np.array(sgems.get_X(rt_grid_name)), np.array(sgems.get_Y(rt_grid_name)), np.array(sgems.get_Z(rt_grid_name))
         values = np.array(sgems.get_property(rt_grid_name, rt_prop_name))
+        nan_mask_pts = np.isfinite(values)
+        values = values[nan_mask_pts]
+        x, y, z = np.array(sgems.get_X(rt_grid_name))[nan_mask_pts], np.array(sgems.get_Y(rt_grid_name))[nan_mask_pts], np.array(sgems.get_Z(rt_grid_name))[nan_mask_pts]
         grid = helpers.ar2gemsgrid_to_ar2gasgrid(grid_name, '')
         target = helpers.nn(x, y, z, values, grid)
+        sgems.set_property(grid_name, 'target', target.tolist())
         #adding nan to target 
         for idx, i in enumerate(nan_mask):
             if i is True:
@@ -173,6 +178,14 @@ class validation: #aqui vai o nome do plugin
 
                 model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
                 var_model_dict['z'][c] = model_var_z
+                
+        #back flag
+        print('Getting closest node for all realizations...')
+        ids = [sgems.get_closest_nodeid(grid_name, xi, yi, zi) for xi, yi, zi in zip(x,y,z)]
+        reals_values = [np.array(r)[ids] for r in reals]
+        cms = [confusion_matrix(values, pred) for pred in reals_values]
+        sum_ew = np.sum(cms, axis=0)
+        final_cm = sum_ew / sum_ew.astype(np.float).sum(axis=1)
 
         print('Validation script saved at seleted folder!')
 
@@ -204,25 +217,44 @@ ranges = [{}, {}, {}]
 codes = list(cat_dict.keys())
 
 def plt_vargs(var_exp, var_model):
-	for c in codes:
-		flname = '{}'+'_'+str(c)
-		fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
-		for idx, d in enumerate(['ew', 'ns', 'z']):
-			if np.all(model_keys):	
-				axes[idx].plot(ranges[idx], var_model[d][0], color='red')
-			else:
-				axes[idx].plot(ranges[idx], var_model[d][c], color='red')
-			for r in var_exp[d][c]:
-				axes[idx].plot(ranges[idx], r, color='gray')
-				axes[idx].set_xlabel('lag distance')
-				axes[idx].set_ylabel('Variance')
-				axes[idx].set_title('Direction '+str(d))
-				axes[idx].grid(True)
+    for c in codes:
+        flname = 'C:/Users/robertomr/Documents/Testes/valid_varg_reproduction'+'_'+str(c)
+        fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
+        for idx, d in enumerate(['ew', 'ns', 'z']):
+            #if np.all(model_keys):	
+			#	axes[idx].plot(ranges[idx], var_model[d][0], color='red')
+			#else:
+			#	axes[idx].plot(ranges[idx], var_model[d][c], color='red')
+            for r in var_exp[d][c]:
+                axes[idx].plot(ranges[idx], r, color='gray')
+                axes[idx].set_xlabel('Lag distance (m)')
+                axes[idx].set_ylabel('Variance')
+                axes[idx].set_title('Direction '+str(d))
+                axes[idx].grid(True)
+            
+            if np.sum(model_keys) == 0:	
+                axes[idx].plot(ranges[idx], var_model[d][0], color='red')
+            else:
+                axes[idx].plot(ranges[idx], var_model[d][c], color='red')
 		#fig.title('Variogram '+str(int(c)))
-		fig.savefig(flname)
+        fig.savefig(flname)
 		
 plt_vargs(var_exp, var_model)
-        '''.format(cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path)
+
+cm = {}
+
+import seaborn as sns
+
+plt.figure()
+sns_plot = sns.heatmap(cm, annot=True, vmin=0.0, vmax=1.0, fmt='.2f')
+plt.yticks(np.arange(len(codes))+0.5, labels=codes)
+plt.xticks(np.arange(len(codes))+0.5, labels=codes)
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+figure = sns_plot.get_figure()
+figure.savefig('{}')
+
+        '''.format(cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, np.array2string(final_cm, separator=', '), con_mat_path)
 
         #writing script
         f = open(scipt_path, 'w')
