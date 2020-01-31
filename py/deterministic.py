@@ -181,7 +181,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
             rhs_var = rhs(coords_matrix, nodes, cov)  
 
         for idx, v in enumerate(variables):
-            rt = codes[idx]
+            rt = float(codes[idx])
             print('Interpolating RT {}'.format(rt))
             if krig_type == "Dual kriging":
                 results = dual_krig(grid, lhs_inv, rhs_var, v)
@@ -199,7 +199,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
 
     else:
         for idx, v in enumerate(variables):
-            rt = codes[idx]
+            rt = float(codes[idx])
             print('Interpolating using one covariance model per variables')
             print('Interpolating RT {}'.format(rt))
             if krig_type != 'Ar2gas dual kriging ':
