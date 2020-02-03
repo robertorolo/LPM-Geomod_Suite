@@ -64,7 +64,7 @@ def modelfile_to_ar2gasmodel(path):
             model_structs.append(ar2gas.compute.Covariance.nugget(nugget))
             n_struct = int(lines[idx+1].split()[2].split('"')[1])
             for struc in range(n_struct):
-                line = struc*4+2
+                line = idx+struc*4+2
                 contribution = float(lines[idx+2].split()[1].split('"')[1])
                 struct_type = lines[idx+2].split()[2].split('"')[1]
                 r1 = float(lines[line+1].split()[1].split('"')[1])
