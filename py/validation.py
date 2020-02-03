@@ -215,10 +215,11 @@ var_model = {}
 model_keys = np.array(list(cat_dict.keys()))
 ranges = [{}, {}, {}]
 codes = list(cat_dict.keys())
+flname = '{}'
 
-def plt_vargs(var_exp, var_model):
+def plt_vargs(var_exp, var_model, flname):
     for c in codes:
-        flname = 'C:/Users/robertomr/Documents/Testes/varg_reproduction'+'_'+str(c)
+        flname = flname+'_'+str(c)
         fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
         for idx, d in enumerate(['ew', 'ns', 'z']):
             #if np.all(model_keys):	
@@ -239,7 +240,7 @@ def plt_vargs(var_exp, var_model):
 		#fig.title('Variogram '+str(int(c)))
         fig.savefig(flname)
 		
-plt_vargs(var_exp, var_model)
+plt_vargs(var_exp, var_model, flname)
 
 cm = {}
 
@@ -254,7 +255,7 @@ plt.ylabel('Actual')
 figure = sns_plot.get_figure()
 figure.savefig('{}')
 
-        '''.format(cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, np.array2string(final_cm, separator=', '), con_mat_path)
+        '''.format(cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path, np.array2string(final_cm, separator=', '), con_mat_path)
 
         #writing script
         f = open(scipt_path, 'w')
