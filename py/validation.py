@@ -219,7 +219,7 @@ flname = '{}'
 
 def plt_vargs(var_exp, var_model, flname):
     for c in codes:
-        flname = flname+'_'+str(c)
+        flname_c = flname+'_'+str(c)
         fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
         for idx, d in enumerate(['ew', 'ns', 'z']):
             #if np.all(model_keys):	
@@ -238,7 +238,7 @@ def plt_vargs(var_exp, var_model, flname):
             else:
                 axes[idx].plot(ranges[idx], var_model[d][c], color='red')
 		#fig.title('Variogram '+str(int(c)))
-        fig.savefig(flname)
+        fig.savefig(flname_c)
 		
 plt_vargs(var_exp, var_model, flname)
 
