@@ -73,7 +73,6 @@ def modelfile_to_ar2gasmodel(path):
                 a1 = float(lines[line+2].split()[1].split('"')[1])
                 a2 = float(lines[line+2].split()[2].split('"')[1])
                 a3 = float(lines[line+2].split()[3].split('"')[1])
-                print(a1, a2, a3)
                 if struct_type=='Spherical':
                     struc_model = ar2gas.compute.Covariance.spherical(contribution, r1, r2, r3, a1, a2, a3)
                     model_structs.append(struc_model)
