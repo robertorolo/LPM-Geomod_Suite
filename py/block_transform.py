@@ -54,10 +54,10 @@ class block_transform: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -77,12 +77,21 @@ class block_transform: #aqui vai o nome do plugin
         props_values = np.array(props_values)
         
         #calculating probs
-        probs_matrix = np.array([sofmax_transformation(sds, gamma) for sds in props_values])
+        print('Calculating probabilities...')
+        probs_matrix = np.array([sofmax_transformation(sds, gamma) for sds in props_values.T])
         probs_matrix = probs_matrix.T
         
-        for p in probs_matrix:
-            sgems.set_property(grid_name, prop_names[i]+'_gamma_'+str(gamma), p)
-
+        for i, p in enumerate(probs_matrix):
+           sgems.set_property(grid_name, prop_names[i]+'_gamma_'+str(gamma), p.tolist())
+           
+        #calculating entropy
+        print('Calculating entropy...')
+        entropies = [entropy(probs) for probs in probs_matrix.T]
+        entropies = (entropies - min(entropies))/(max(entropies) - min(entropies))
+        sgems.set_property(grid_name, 'entropy_gamma_'+str(gamma), entropies.tolist())
+        
+        print('Done!')
+        
         return True
 
 #################################################################################################
