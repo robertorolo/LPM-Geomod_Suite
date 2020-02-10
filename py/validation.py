@@ -132,8 +132,8 @@ class validation: #aqui vai o nome do plugin
         
         exp_vars_dict = {'ew':{}, 'ns':{}, 'z':{}}
         var_model_dict = {'ew':{}, 'ns':{}, 'z':{}}
-        sx, sy, sz = grid.dim()[0], grid.dim()[1], grid.dim()[2]
-        rangeinx, rangeiny, rangeinz = [i*sx for i in range(0,nlags+1)], [i*sy for i in range(0,nlags+1)], [i*sx for i in range(0,nlags+1)]
+        sx, sy, sz = grid.cell_size()[0], grid.cell_size()[1], grid.cell_size()[2]
+        rangeinx, rangeiny, rangeinz = [i*sx for i in range(0,nlags+1)], [i*sy for i in range(0,nlags+1)], [i*sz for i in range(0,nlags+1)]
 
         print('Calculating experimental variograms...')
         for c in codes:
