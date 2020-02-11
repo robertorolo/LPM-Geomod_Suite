@@ -126,7 +126,37 @@ def ar2gemsvarwidget_to_ar2gascovariance(p):
         cov_lst.append(cov)
 
     return cov_lst
-
+    
+def singlear2gemsvarwidget_to_ar2gascovariance(p):
+    
+    n_struct = int(p['variograminput']['structures_count'])
+    cov = []
+    nugget = float(p['variograminput']['nugget'])
+    ar2gas_nugget = ar2gas.compute.Covariance.nugget(nugget)
+    cov.append(ar2gas_nugget)
+    
+    for i in range(n_struct):
+        cont = float(p['variograminput']['structure_{}'.format(i+1)]['contribution'])
+        type = p['variograminput']['structure_{}'.format(i+1)]['type']
+        r1 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['max'])
+        r2 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['med'])
+        r3 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['min'])
+        a1 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['x'])
+        a2 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['y'])
+        a3 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['z'])
+        
+        if type == 'Spherical':
+            struct = ar2gas.compute.Covariance.spherical(cont, r1, r2, r3, a1, a2, a3)
+            cov.append(struct)
+        if type == 'Exponential':
+            struct = ar2gas.compute.Covariance.exponential(cont, r1, r2, r3, a1, a2, a3)
+            cov.append(struct)
+        if type == 'Gaussian':
+            struct = ar2gas.compute.Covariance.gaussian(cont, r1, r2, r3, a1, a2, a3)
+            cov.append(struct)
+            
+    return cov
+            
 def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
     info = sgems.get_grid_info(grid_name)
     grid = ar2gas.data.CartesianGrid(int(info['num_cells'][0]), int(info['num_cells'][1]), int(info['num_cells'][2]), 
