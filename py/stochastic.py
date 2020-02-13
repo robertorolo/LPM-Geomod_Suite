@@ -31,10 +31,10 @@ class stochastic: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -55,18 +55,17 @@ class stochastic: #aqui vai o nome do plugin
         
         #getting block properties
         re_use = self.params['checkBox_3']['value']
-        grid_grid_name = self.params['propertyselector']['grid']
-        grid_entropy = self.params['propertyselector']['property']
         gamma = float(self.params['doubleSpinBox']['value'])
-        grid_prob_name = self.params['gridselectorbasic_2']['value']
-        grid_pobs_props_names = self.params['orderedpropertyselector_2']['value'].split(';')
+        if re_use == '1 ':
+            grid_grid_name = self.params['propertyselector']['grid']
+            grid_entropy = self.params['propertyselector']['property']
+            grid_prob_name = self.params['gridselectorbasic_2']['value']
+            grid_pobs_props_names = self.params['orderedpropertyselector_2']['value'].split(';')
         
         #p-field tab variables
-        nreals = int(self.params['spinBox']['value'])
-        max_prev = int(self.params['spinBox_2']['value'])
-        elipspoid = self.params['ellipsoidinput']['value'].split()
-        r1, r2, r3 = float(elipspoid[0]), float(elipspoid[1]), float(elipspoid[2])
-        a1, a2, a3 = float(elipspoid[3]), float(elipspoid[4]), float(elipspoid[5])
+        n_reals = self.params['spinBox']['value'] 
+        seed = self.params['spinBox_3']['value'] 
+        nlines = self.params['spinBox_2']['value'] 
         
         return True
 
