@@ -145,7 +145,6 @@ def dual_krig(grid, lhs_inv, rhs, var):
     print('Took {} seconds'.format(round((t2-t1),2)))
     return results
 
-
 def ar2gas_dual_krig(cov, x, y, z, prop, grid):
     print('Computing results by ar2gas dual kriging...')
     t1 = time.time()
@@ -172,7 +171,6 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
     coords_matrix = np.vstack((x,y,z)).T
     nodes = grid.locations()
     interpolated_variables = []
-    print([variograms[int(rt)][1].angles() for rt in codes])
 
     if len(variograms) == 1:
         print('Interpolating using the same covariance model for all variables')
@@ -410,7 +408,7 @@ class deterministic: #aqui vai o nome do plugin
                 helpers.ar2gasgrid_to_ar2gems(grid_name, grid)
 
                 masked_grid = ar2gas.data.MaskedGrid(downscaled_grid, mask)
-
+    
                 interpolated_variables = interpolate_variables(x, y, z, variables, codes, masked_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, grid_name)
 
                 geomodel = build_refined_geomodel(interpolated_variables, downscaled_props, codes, var_type)
