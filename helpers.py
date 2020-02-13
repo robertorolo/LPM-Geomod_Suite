@@ -139,7 +139,7 @@ def singlear2gemsvarwidget_to_ar2gascovariance(p):
         cont = float(p['variograminput']['structure_{}'.format(i+1)]['contribution'])
         type = p['variograminput']['structure_{}'.format(i+1)]['type']
         r1 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['max'])
-        r2 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['med'])
+        r2 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['medium'])
         r3 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['min'])
         a1 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['x'])
         a2 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['y'])
