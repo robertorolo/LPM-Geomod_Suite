@@ -8,6 +8,7 @@ import helpers
 from itertools import product
 import time
 import ar2gas
+from scipy.stats import norm
 
 #################################################################################################
 
@@ -23,6 +24,7 @@ def read_params(a,j=''):
         else:
             read_params(a[i],j+"['"+str(i)+"']")
             
+#Interpolation functions       
 def lhs(coords_matrix, cov, global_krig=False):
     print('Calculating LHS matrix...')
     t1 = time.time()
@@ -242,6 +244,52 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
             print('Geologic model created!')
             
     return geomodel
+    
+#Simulation functions
+def tbsim(mgrid, cov, nlines, nreal, seed):
+    print('Simulating p-field')
+
+    mask = mgrid.mask()
+    
+    tbsim = gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov)
+    results = tbsim.simulate(mgrid, nreal, 0)        
+    results = [norm.cdf(lst) for lst in results]
+    
+    results_list = []
+    for r in results:
+        counter = 0
+        tg_prop = np.ones(grid['nx']*grid['ny']*grid['nz']) * float('nan')
+        for idx, v in enumerate(mask):
+            if v == True:
+                tg_prop[idx] = r[counter]
+                counter = counter+1
+        results_list.append(tg_prop)
+                    
+    return results_list
+    
+#block transformation functions
+def sofmax_transformation(df_lst, gamma):
+	
+	prob_lst = np.empty(len(df_lst))
+
+	if True in np.isnan(df_lst):
+		prob_lst = np.ones(len(df_lst))*float("nan")
+
+	else:
+		exp_lst = [np.exp(-i/gamma) for i in df_lst]
+		for i, exp in enumerate(exp_lst):
+			prob = exp/sum(exp_lst)
+			prob_lst[i] = prob
+
+	return prob_lst
+
+def entropy(prob_list):
+
+	if True in np.isnan(prob_list):
+		return float("nan")
+
+	else:
+		return -sum([prob*np.log2(prob) for prob in prob_list])
 
 #################################################################################################
 
@@ -317,6 +365,7 @@ class stochastic: #aqui vai o nome do plugin
         
         #interpolating to all grid nodes if not re-using properties
         if re_use == '0':
+            print('Not re-using properties')
             a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
             
             variables = []
@@ -334,6 +383,25 @@ class stochastic: #aqui vai o nome do plugin
             
             var_type = ''
             interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name)
+            interpolated_variables = np.array(interpolated_variables)
+            
+            #calculating probs
+            print('Calculating probabilities...')
+            probs_matrix = np.array([sofmax_transformation(sds, gamma) for sds in interpolated_variables.T])
+            probs_matrix = probs_matrix.T
+            
+            if keep_variables == '1':
+                for i, p in enumerate(probs_matrix):
+                   sgems.set_property(tg_grid_name, pt_props_name[i]+'_gamma_'+str(gamma), p.tolist())
+               
+            #calculating entropy
+            print('Calculating entropy...')
+            entropies = [entropy(probs) for probs in probs_matrix.T]
+            entropies = (entropies - min(entropies))/(max(entropies) - min(entropies))
+            if keep_variables == '1':
+                sgems.set_property(tg_grid_name, 'entropy_gamma_'+str(gamma), entropies.tolist())
+            
+            print('Done!')
           
         return True
 
