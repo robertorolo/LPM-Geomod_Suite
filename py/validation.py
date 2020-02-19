@@ -32,6 +32,11 @@ def prop_reals(reals, cats):
       cat_props.append(real_prop)
     props[int(c)] = cat_props
   return props
+  
+def std_array(a):
+    a = np.array(a)
+    std_a = (a - np.min(a))/(np.max(a) - np.min(a))
+    return std_a.tolist()
 
 #################################################################################################
 
@@ -69,6 +74,7 @@ class validation: #aqui vai o nome do plugin
         rt_grid_name = self.params['propertyselectornoregion']['grid']
         rt_prop_name = self.params['propertyselectornoregion']['property']
         n_var = int(self.params['indicator_regionalization_input']['number_of_indicator_group'])
+        std_var = self.params['checkBox_2']['value']
 
         #getting codes
         rt_prop = np.array(sgems.get_property(rt_grid_name, rt_prop_name))
@@ -142,13 +148,22 @@ class validation: #aqui vai o nome do plugin
             indicators = np.where(indicators==True, 1, 0)
 
             exp_vars_ew = [ar2gas.compute.compute_variogram(grid, data, (1, 0, 0), nlags, (0, 0, 0), 0) for data in indicators]
-            exp_vars_dict['ew'][c] = exp_vars_ew
+            if std_var == '1':
+                exp_vars_dict['ew'][c] = std_array(exp_vars_ew)
+            else:
+                exp_vars_dict['ew'][c] = exp_vars_ew
 
             exp_vars_ns = [ar2gas.compute.compute_variogram(grid, data, (0, 1, 0), nlags, (0, 0, 0), 0) for data in indicators]
-            exp_vars_dict['ns'][c] = exp_vars_ns
+            if std_var == '1':
+                exp_vars_dict['ns'][c] = std_array(exp_vars_ns)
+            else:
+                exp_vars_dict['ns'][c] = exp_vars_ns
 
             exp_vars_z = [ar2gas.compute.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in indicators]
-            exp_vars_dict['z'][c] = exp_vars_z
+            if std_var == '1':
+                exp_vars_dict['z'][c] = std_array(exp_vars_z)
+            else:
+                exp_vars_dict['z'][c] = exp_vars_z
 
         print('Calculating variogram models...')
         if np.sum(np.array(list(variograms.keys()))) == 0:
@@ -157,27 +172,45 @@ class validation: #aqui vai o nome do plugin
             sill = cov.compute([0,0,0],[0,0,0])
             
             model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
-            var_model_dict['ew'][c] = model_var_ew
+            if std_var == '1':
+                var_model_dict['ew'][c] = std_array(model_var_ew)
+            else:
+                var_model_dict['ew'][c] = model_var_ew
 
             model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
-            var_model_dict['ns'][c] = model_var_ns
-
+            if std_var == '1':
+                var_model_dict['ns'][c] = std_array(model_var_ns)
+            else:
+                var_model_dict['ns'][c] = model_var_ns
+                
             model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
-            var_model_dict['z'][c] = model_var_z
-        
+            if std_var == '1':
+                var_model_dict['z'][c] = std_array(model_var_z)
+            else:
+                var_model_dict['z'][c] = model_var_z
+                
         else:
             for c in codes:
                 cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
                 sill = cov.compute([0,0,0],[0,0,0])
             
                 model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
-                var_model_dict['ew'][c] = model_var_ew
+                if std_var == '1':
+                    var_model_dict['ew'][c] = std_array(model_var_ew)
+                else:
+                    var_model_dict['ew'][c] = model_var_ew
 
                 model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
-                var_model_dict['ns'][c] = model_var_ns
+                if std_var == '1':
+                    var_model_dict['ns'][c] = std_array(model_var_ns)
+                else:
+                    var_model_dict['ns'][c] = model_var_ns
 
                 model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
-                var_model_dict['z'][c] = model_var_z
+                if std_var == '1':
+                    var_model_dict['z'][c] = std_array(model_var_z)
+                else:
+                    var_model_dict['z'][c] = model_var_z
                 
         #back flag
         print('Getting closest node for all realizations...')
