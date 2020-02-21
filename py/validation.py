@@ -33,9 +33,10 @@ def prop_reals(reals, cats):
     props[int(c)] = cat_props
   return props
   
-def std_array(a):
+def std_array(a, var):
     a = np.array(a)
     std_a = (a - np.min(a))/(np.max(a) - np.min(a))
+    std_a = std_a * var
     return std_a.tolist()
 
 #################################################################################################
@@ -136,7 +137,7 @@ class validation: #aqui vai o nome do plugin
             else:
                 variograms = dict(zip(codes, varg_lst))
         
-        exp_vars_dict = {'ew':{}, 'ns':{}, 'z':{}}
+        exp_vars_dict = {'ew':{}, 'ew_mean':{}, 'ns':{}, 'ns_mean':{}, 'z':{}, 'z_mean':{}}
         var_model_dict = {'ew':{}, 'ns':{}, 'z':{}}
         sx, sy, sz = grid.cell_size()[0], grid.cell_size()[1], grid.cell_size()[2]
         rangeinx, rangeiny, rangeinz = [i*sx for i in range(0,nlags+1)], [i*sy for i in range(0,nlags+1)], [i*sz for i in range(0,nlags+1)]
@@ -148,22 +149,19 @@ class validation: #aqui vai o nome do plugin
             indicators = np.where(indicators==True, 1, 0)
 
             exp_vars_ew = [ar2gas.compute.compute_variogram(grid, data, (1, 0, 0), nlags, (0, 0, 0), 0) for data in indicators]
-            if std_var == '1':
-                exp_vars_dict['ew'][c] = std_array(exp_vars_ew)
-            else:
-                exp_vars_dict['ew'][c] = exp_vars_ew
+            mean_ew = np.mean(np.array(exp_vars_ew), axis=0)
+            exp_vars_dict['ew'][c] = exp_vars_ew
+            exp_vars_dict['ew_mean'][c] = mean_ew.tolist()
 
             exp_vars_ns = [ar2gas.compute.compute_variogram(grid, data, (0, 1, 0), nlags, (0, 0, 0), 0) for data in indicators]
-            if std_var == '1':
-                exp_vars_dict['ns'][c] = std_array(exp_vars_ns)
-            else:
-                exp_vars_dict['ns'][c] = exp_vars_ns
+            mean_ns = np.mean(np.array(exp_vars_ns), axis=0)
+            exp_vars_dict['ns'][c] = exp_vars_ns
+            exp_vars_dict['ns_mean'][c] = mean_ns.tolist()
 
             exp_vars_z = [ar2gas.compute.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in indicators]
-            if std_var == '1':
-                exp_vars_dict['z'][c] = std_array(exp_vars_z)
-            else:
-                exp_vars_dict['z'][c] = exp_vars_z
+            mean_z = np.mean(np.array(exp_vars_z), axis=0)
+            exp_vars_dict['z'][c] = exp_vars_z
+            exp_vars_dict['z_mean'][c] = mean_z.tolist()
 
         print('Calculating variogram models...')
         if np.sum(np.array(list(variograms.keys()))) == 0:
@@ -173,19 +171,19 @@ class validation: #aqui vai o nome do plugin
             
             model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
             if std_var == '1':
-                var_model_dict['ew'][c] = std_array(model_var_ew)
+                var_model_dict['ew'][c] = std_array(model_var_ew, np.max(exp_vars_dict['ew_mean'][c]))
             else:
                 var_model_dict['ew'][c] = model_var_ew
 
             model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
             if std_var == '1':
-                var_model_dict['ns'][c] = std_array(model_var_ns)
+                var_model_dict['ns'][c] = std_array(model_var_ns, np.max(exp_vars_dict['ns_mean'][c]))
             else:
                 var_model_dict['ns'][c] = model_var_ns
                 
             model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
             if std_var == '1':
-                var_model_dict['z'][c] = std_array(model_var_z)
+                var_model_dict['z'][c] = std_array(model_var_z, np.max(exp_vars_dict['z_mean'][c]))
             else:
                 var_model_dict['z'][c] = model_var_z
                 
@@ -196,19 +194,19 @@ class validation: #aqui vai o nome do plugin
             
                 model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
                 if std_var == '1':
-                    var_model_dict['ew'][c] = std_array(model_var_ew)
+                    var_model_dict['ew'][c] = std_array(model_var_ew, np.max(exp_vars_dict['ew_mean'][c]))
                 else:
                     var_model_dict['ew'][c] = model_var_ew
 
                 model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
                 if std_var == '1':
-                    var_model_dict['ns'][c] = std_array(model_var_ns)
+                    var_model_dict['ns'][c] = std_array(model_var_ns, np.max(exp_vars_dict['ns_mean'][c]))
                 else:
                     var_model_dict['ns'][c] = model_var_ns
 
                 model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
                 if std_var == '1':
-                    var_model_dict['z'][c] = std_array(model_var_z)
+                    var_model_dict['z'][c] = std_array(model_var_z, np.max(exp_vars_dict['z_mean'][c]))
                 else:
                     var_model_dict['z'][c] = model_var_z
                 
@@ -266,10 +264,12 @@ def plt_vargs(var_exp, var_model, flname):
                 axes[idx].set_title('Direction '+str(d))
                 axes[idx].grid(True)
             
+            axes[idx].plot(ranges[idx], var_exp[d+str('_mean')][c], color='black')
             if np.sum(model_keys) == 0:	
                 axes[idx].plot(ranges[idx], var_model[d][0], color='red')
             else:
                 axes[idx].plot(ranges[idx], var_model[d][c], color='red')
+                
 		#fig.title('Variogram '+str(int(c)))
         fig.savefig(flname_c)
 		
