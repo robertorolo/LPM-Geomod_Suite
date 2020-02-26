@@ -19,7 +19,7 @@ def read_params(a,j=''):
         else:
             read_params(a[i],j+"['"+str(i)+"']")
             
-def sofmax_transformation(df_lst, gamma):
+def sofmax_transformation(df_lst, gamma, var_type):
 	
 	prob_lst = np.empty(len(df_lst))
 
@@ -27,7 +27,7 @@ def sofmax_transformation(df_lst, gamma):
 		prob_lst = np.ones(len(df_lst))*float("nan")
 
 	else:
-		exp_lst = [np.exp(-i/gamma) for i in df_lst]
+		exp_lst = [np.exp(-i/gamma) for i in df_lst] if var_type == 'Signed distances' else [np.exp(i/gamma) for i in df_lst]
 		for i, exp in enumerate(exp_lst):
 			prob = exp/sum(exp_lst)
 			prob_lst[i] = prob

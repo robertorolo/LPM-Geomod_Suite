@@ -290,7 +290,7 @@ def cat_random_sample(prob_list, u):
     return position
  
 #block transformation functions
-def sofmax_transformation(df_lst, gamma):
+def sofmax_transformation(df_lst, gamma, var_type):
 	
 	prob_lst = np.empty(len(df_lst))
 
@@ -298,7 +298,7 @@ def sofmax_transformation(df_lst, gamma):
 		prob_lst = np.ones(len(df_lst))*float("nan")
 
 	else:
-		exp_lst = [np.exp(-i/gamma) for i in df_lst]
+		exp_lst = [np.exp(-i/gamma) for i in df_lst] if var_type == 'Signed distances' else [np.exp(i/gamma) for i in df_lst]
 		for i, exp in enumerate(exp_lst):
 			prob = exp/sum(exp_lst)
 			prob_lst[i] = prob
@@ -412,15 +412,19 @@ class stochastic: #aqui vai o nome do plugin
             
             #calculating probs
             print('Calculating probabilities...')
+            t1 = time.time()
             probs_matrix = np.array([sofmax_transformation(sds, gamma) for sds in interpolated_variables.T])
             probs_matrix = probs_matrix.T
             
             if keep_variables == '1':
                 for i, p in enumerate(probs_matrix):
                    sgems.set_property(tg_grid_name, pt_props_name[i]+'_gamma_'+str(gamma), p.tolist())
-               
+            t2 = time.time()
+            print('Took {} seconds'.format(round((t2-t1), 2)))
+
             #calculating entropy
             print('Calculating entropy...')
+            t1 = time.time()
             entropies = [entropy(probs) for probs in probs_matrix.T]
             entropies = (entropies - min(entropies))/(max(entropies) - min(entropies))
             if keep_variables == '1':
@@ -428,6 +432,8 @@ class stochastic: #aqui vai o nome do plugin
             
             props = probs_matrix.tolist()
             props.append(entropies)
+            t2 = time.time()
+            print('Took {} seconds'.format(round((t2-t1), 2)))
             print('Done!')
 
         else:
@@ -458,7 +464,7 @@ class stochastic: #aqui vai o nome do plugin
         sim_grid = ar2gas.data.MaskedGrid(cgrid, final_mask.tolist())
 
         #creating the frozen geologic model
-        f_geomodel =build_geomodel('Indicators', props[:-1], codes, a2g_grid, tg_grid_name, tg_prop_name, keep_variables)
+        f_geomodel = build_geomodel('Indicators', props[:-1], codes, a2g_grid, tg_grid_name, tg_prop_name, keep_variables)
           
         #simulating p-fields
         reals = tbsim(sim_grid, pfieldvar, nlines, nreals, seed)
