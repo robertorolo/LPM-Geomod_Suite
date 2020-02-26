@@ -406,7 +406,7 @@ class stochastic: #aqui vai o nome do plugin
         else:
             print('Re-using properties')
             entropies = sgems.get_property(grid_grid_name, grid_entropy)
-            probs_matrix np.array([sgems.get_property(grid_prob_name, p) for p in grid_pobs_props_names])
+            probs_matrix = np.array([sgems.get_property(grid_prob_name, p) for p in grid_pobs_props_names])
           
         return True
 
