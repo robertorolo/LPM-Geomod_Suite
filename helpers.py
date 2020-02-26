@@ -137,7 +137,7 @@ def singlear2gemsvarwidget_to_ar2gascovariance(p):
     
     for i in range(n_struct):
         cont = float(p['variograminput']['structure_{}'.format(i+1)]['contribution'])
-        type = p['variograminput']['structure_{}'.format(i+1)]['type']
+        t = p['variograminput']['structure_{}'.format(i+1)]['type']
         r1 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['max'])
         r2 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['medium'])
         r3 = float(p['variograminput']['structure_{}'.format(i+1)]['ranges']['min'])
@@ -145,13 +145,13 @@ def singlear2gemsvarwidget_to_ar2gascovariance(p):
         a2 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['y'])
         a3 = float(p['variograminput']['structure_{}'.format(i+1)]['angles']['z'])
         
-        if type == 'Spherical':
+        if t == 'Spherical':
             struct = ar2gas.compute.Covariance.spherical(cont, r1, r2, r3, a1, a2, a3)
             cov.append(struct)
-        if type == 'Exponential':
+        if t == 'Exponential':
             struct = ar2gas.compute.Covariance.exponential(cont, r1, r2, r3, a1, a2, a3)
             cov.append(struct)
-        if type == 'Gaussian':
+        if t == 'Gaussian':
             struct = ar2gas.compute.Covariance.gaussian(cont, r1, r2, r3, a1, a2, a3)
             cov.append(struct)
             
