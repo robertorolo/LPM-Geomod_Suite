@@ -347,6 +347,7 @@ class stochastic: #aqui vai o nome do plugin
         krig_type = self.params['comboBox_2']['value']
         fx, fy, fz = int(self.params['fx']['value']), int(self.params['fy']['value']), int(self.params['fz']['value'])
         codes = [v.split('_')[-1] for v in pt_props_name]
+        var_type = self.params['comboBox']['value']
         
         #getting block properties
         re_use = self.params['checkBox_3']['value']
@@ -413,7 +414,7 @@ class stochastic: #aqui vai o nome do plugin
             #calculating probs
             print('Calculating probabilities...')
             t1 = time.time()
-            probs_matrix = np.array([sofmax_transformation(sds, gamma) for sds in interpolated_variables.T])
+            probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in interpolated_variables.T])
             probs_matrix = probs_matrix.T
             
             if keep_variables == '1':
@@ -426,7 +427,8 @@ class stochastic: #aqui vai o nome do plugin
             print('Calculating entropy...')
             t1 = time.time()
             entropies = [entropy(probs) for probs in probs_matrix.T]
-            entropies = (entropies - min(entropies))/(max(entropies) - min(entropies))
+            entropies = np.array(entropies)
+            entropies = (entropies - np.nanmin(entropies))/(np.nanmax(entropies) - np.nanmin(entropies))
             if keep_variables == '1':
                 sgems.set_property(tg_grid_name, 'entropy_gamma_'+str(gamma), entropies.tolist())
             

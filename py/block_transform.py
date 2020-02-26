@@ -54,10 +54,10 @@ class block_transform: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        #print("dicionario de parametros: ", params)
+        print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        #read_params(params) #para nao printar comente essa linha
+        read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -70,6 +70,7 @@ class block_transform: #aqui vai o nome do plugin
         grid_name = self.params['gridselectorbasic']['value']
         prop_names = self.params['orderedpropertyselector']['value'].split(';')
         gamma = float(self.params['doubleSpinBox']['value'])
+        var_type = self.params['comboBox']['value']
         
         props_values = []
         for v in prop_names:
@@ -78,7 +79,7 @@ class block_transform: #aqui vai o nome do plugin
         
         #calculating probs
         print('Calculating probabilities...')
-        probs_matrix = np.array([sofmax_transformation(sds, gamma) for sds in props_values.T])
+        probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in props_values.T])
         probs_matrix = probs_matrix.T
         
         for i, p in enumerate(probs_matrix):
@@ -87,7 +88,8 @@ class block_transform: #aqui vai o nome do plugin
         #calculating entropy
         print('Calculating entropy...')
         entropies = [entropy(probs) for probs in probs_matrix.T]
-        entropies = (entropies - min(entropies))/(max(entropies) - min(entropies))
+        entropies = np.array(entropies)
+        entropies = (entropies - np.nanmin(entropies))/(np.nanmax(entropies) - np.nanmin(entropies))
         sgems.set_property(grid_name, 'entropy_gamma_'+str(gamma), entropies.tolist())
         
         print('Done!')
