@@ -406,7 +406,7 @@ class stochastic: #aqui vai o nome do plugin
 
             x, y, z = np.array(sgems.get_X(pt_grid_name))[nan_filter], np.array(sgems.get_Y(pt_grid_name))[nan_filter], np.array(sgems.get_Z(pt_grid_name))[nan_filter]
             
-            var_type = ''
+            var_type = 'variable'
             interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name)
             interpolated_variables = np.array(interpolated_variables)
             
@@ -445,7 +445,7 @@ class stochastic: #aqui vai o nome do plugin
             tg_grid_name = 'stochastic_downscaled_grid'
 
         #getting the mask and creating a masked grid for entropy cutoff
-        mask = props[-1] <= cutoff
+        mask = props[-1] >= cutoff
         mask = np.where(mask == True, 1, 0)
         if hasattr(a2g_grid, 'mask'): 
             final_mask = a2g_grid.mask() * mask
