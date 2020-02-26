@@ -191,8 +191,9 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
     print('Finished interpolating!')
     return interpolated_variables
 
-def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, tg_prop_name):
-    print('Creating a geologic model...')
+def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, tg_prop_name, keep_variables):
+    print('Creating a frozen geologic model...')
+    tg_prop_name = 'frozen_'+tg_prop_name
     
     if var_type == 'Indicators':
         
@@ -205,7 +206,8 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
             print('Cutting-off interpolated indicator property in {}'.format(proportion.round(2)))
             q = np.quantile(interpolated_variables[0], (1 - proportion))
             solid = np.where(interpolated_variables[0] > q, 1, 0)
-            sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
+            if keep_variables == '1':
+                sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
         else:
             int_variables = np.array(interpolated_variables).T
@@ -219,14 +221,16 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
                     index = i.argmax(axis=0)
                     geomodel.append(float(codes[index]))
                     idx=idx+1
-            sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
-            print('Geologic model created!')
+            print('Frozen geologic model created!')
+            if keep_variables == '1':
+                sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
 
     else:
 
         if len(interpolated_variables) == 1:
             solid = np.where(interpolated_variables[0] < 0, 1, 0)
-            sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
+            if keep_variables == '1':
+                sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
 
         else:
             int_variables = np.array(interpolated_variables).T
@@ -240,33 +244,51 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
                     index = i.argmin(axis=0)
                     geomodel.append(float(codes[index]))
                     idx=idx+1
-            sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
-            print('Geologic model created!')
+            print('Frozen geologic model created!')
+            if keep_variables == '1':
+                sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
             
     return geomodel
     
 #Simulation functions
 def tbsim(mgrid, cov, nlines, nreal, seed):
     print('Simulating p-field')
+    t1 = time.time()
 
     mask = mgrid.mask()
-    
-    tbsim = gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov)
-    results = tbsim.simulate(mgrid, nreal, 0)        
+
+    tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov)
+    results = tbsim.simulate(mgrid, nreal, 0)
     results = [norm.cdf(lst) for lst in results]
     
     results_list = []
     for r in results:
         counter = 0
-        tg_prop = np.ones(grid['nx']*grid['ny']*grid['nz']) * float('nan')
+        tg_prop = np.ones(mgrid.dim()[0]*mgrid.dim()[1]*mgrid.dim()[2]) * float('nan')
         for idx, v in enumerate(mask):
             if v == True:
                 tg_prop[idx] = r[counter]
                 counter = counter+1
         results_list.append(tg_prop)
                     
+    print('Done!')
+    t2 = time.time()
+    print('Took {} seconds'.format(round((t2-t1), 2)))
     return results_list
-    
+
+def cat_random_sample(prob_list, u):
+
+    position = 0
+    probs = []
+    for idx, prob in enumerate(prob_list):
+        probs.append(prob)
+        acc = sum(probs)
+        if u <= acc:
+            position = idx
+            break
+
+    return position
+ 
 #block transformation functions
 def sofmax_transformation(df_lst, gamma):
 	
@@ -329,16 +351,17 @@ class stochastic: #aqui vai o nome do plugin
         #getting block properties
         re_use = self.params['checkBox_3']['value']
         gamma = float(self.params['doubleSpinBox']['value'])
-        if re_use == '1 ':
+        cutoff = float(self.params['doubleSpinBox_2']['value'])
+        if re_use == '1':
             grid_grid_name = self.params['propertyselector']['grid']
             grid_entropy = self.params['propertyselector']['property']
             grid_prob_name = self.params['gridselectorbasic_2']['value']
             grid_pobs_props_names = self.params['orderedpropertyselector_2']['value'].split(';')
         
         #p-field tab variables
-        n_reals = self.params['spinBox']['value'] 
-        seed = self.params['spinBox_3']['value'] 
-        nlines = self.params['spinBox_2']['value'] 
+        nreals = int(self.params['spinBox']['value']) 
+        seed = int(self.params['spinBox_3']['value']) 
+        nlines = int(self.params['spinBox_2']['value']) 
         
         #getting variograms
         p = self.params
@@ -362,11 +385,13 @@ class stochastic: #aqui vai o nome do plugin
                 variograms = dict(zip(codes, varg_lst))
                 
         pfieldvar = helpers.singlear2gemsvarwidget_to_ar2gascovariance(p)
+
+        #getting grid
+        a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
         
         #interpolating to all grid nodes if not re-using properties
         if re_use == '0':
             print('Not re-using properties')
-            a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
             
             variables = []
             nan_filters = []
@@ -401,13 +426,46 @@ class stochastic: #aqui vai o nome do plugin
             if keep_variables == '1':
                 sgems.set_property(tg_grid_name, 'entropy_gamma_'+str(gamma), entropies.tolist())
             
+            props = probs_matrix.tolist()
+            props.append(entropies)
             print('Done!')
 
         else:
             print('Re-using properties')
             entropies = sgems.get_property(grid_grid_name, grid_entropy)
             probs_matrix = np.array([sgems.get_property(grid_prob_name, p) for p in grid_pobs_props_names])
+            props = probs_matrix.tolist()
+            props.append(entropies)
+
+        #downscaling probs and entropies if needed
+        if fx != 1 or fy != 1 or fz != 1:
+            a2g_grid, props = helpers.downscale_properties(a2g_grid, props, fx, fy, fz)
+            if keep_variables == '1':
+                helpers.ar2gasgrid_to_ar2gems('stochastic_downscaled_grid', a2g_grid)
+            tg_grid_name = 'stochastic_downscaled_grid'
+
+        #getting the mask and creating a masked grid for entropy cutoff
+        mask = props[-1] <= cutoff
+        mask = np.where(mask == True, 1, 0)
+        if hasattr(a2g_grid, 'mask'): 
+            final_mask = a2g_grid.mask() * mask
+        else:
+            final_mask = mask
+        final_mask = np.where(final_mask == 1, True, False)
+        cgrid = ar2gas.data.CartesianGrid(a2g_grid.dim()[0], a2g_grid.dim()[1], a2g_grid.dim()[2],
+                                          a2g_grid.cell_size()[0], a2g_grid.cell_size()[1], a2g_grid.cell_size()[2],
+                                          a2g_grid.origin()[0], a2g_grid.origin()[1], a2g_grid.origin()[2])
+        sim_grid = ar2gas.data.MaskedGrid(cgrid, final_mask.tolist())
+
+        #creating the frozen geologic model
+        f_geomodel =build_geomodel('Indicators', props[:-1], codes, a2g_grid, tg_grid_name, tg_prop_name, keep_variables)
           
+        #simulating p-fields
+        reals = tbsim(sim_grid, pfieldvar, nlines, nreals, seed)
+        if keep_variables == '1':
+            for idx, i in enumerate(reals):
+                sgems.set_property(tg_grid_name, 'p-field_real_'+str(idx), i.tolist())
+
         return True
 
 #################################################################################################
