@@ -164,51 +164,31 @@ class validation: #aqui vai o nome do plugin
             exp_vars_dict['z_mean'][c] = mean_z.tolist()
 
         print('Calculating variogram models...')
-        if np.sum(np.array(list(variograms.keys()))) == 0:
-            c =0 
-            cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
+        for c in codes:
+            if np.sum(np.array(list(variograms.keys()))) == 0:
+                c1 = 0
+            else:
+                c1 = c 
+            cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c1)])
             sill = cov.compute([0,0,0],[0,0,0])
-            
+        
             model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
             if std_var == '1':
-                var_model_dict['ew'][c] = std_array(model_var_ew, np.max(exp_vars_dict['ew_mean'][c]))
+                var_model_dict['ew'][c1] = std_array(model_var_ew, np.max(exp_vars_dict['ew_mean'][c]))
             else:
-                var_model_dict['ew'][c] = model_var_ew
+                var_model_dict['ew'][c1] = model_var_ew
 
             model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
             if std_var == '1':
-                var_model_dict['ns'][c] = std_array(model_var_ns, np.max(exp_vars_dict['ns_mean'][c]))
+                var_model_dict['ns'][c1] = std_array(model_var_ns, np.max(exp_vars_dict['ns_mean'][c]))
             else:
-                var_model_dict['ns'][c] = model_var_ns
-                
+                var_model_dict['ns'][c1] = model_var_ns
+
             model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
             if std_var == '1':
-                var_model_dict['z'][c] = std_array(model_var_z, np.max(exp_vars_dict['z_mean'][c]))
+                var_model_dict['z'][c1] = std_array(model_var_z, np.max(exp_vars_dict['z_mean'][c]))
             else:
-                var_model_dict['z'][c] = model_var_z
-                
-        else:
-            for c in codes:
-                cov = ar2gas.compute.KrigingCovariance(1., variograms[int(c)])
-                sill = cov.compute([0,0,0],[0,0,0])
-            
-                model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
-                if std_var == '1':
-                    var_model_dict['ew'][c] = std_array(model_var_ew, np.max(exp_vars_dict['ew_mean'][c]))
-                else:
-                    var_model_dict['ew'][c] = model_var_ew
-
-                model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
-                if std_var == '1':
-                    var_model_dict['ns'][c] = std_array(model_var_ns, np.max(exp_vars_dict['ns_mean'][c]))
-                else:
-                    var_model_dict['ns'][c] = model_var_ns
-
-                model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
-                if std_var == '1':
-                    var_model_dict['z'][c] = std_array(model_var_z, np.max(exp_vars_dict['z_mean'][c]))
-                else:
-                    var_model_dict['z'][c] = model_var_z
+                var_model_dict['z'][c1] = model_var_z
                 
         #back flag
         print('Getting closest node for all realizations...')
@@ -223,6 +203,8 @@ class validation: #aqui vai o nome do plugin
         script = '''
 import numpy as np
 import matplotlib.pyplot as plt
+
+nan = float('nan')
 
 cat_dict = {}
 reals_props = {}
@@ -265,7 +247,7 @@ def plt_vargs(var_exp, var_model, flname):
                 axes[idx].grid(True)
             
             axes[idx].plot(ranges[idx], var_exp[d+str('_mean')][c], color='black')
-            if np.sum(model_keys) == 0:	
+            if len(var_model[d]) == 1:	
                 axes[idx].plot(ranges[idx], var_model[d][0], color='red')
             else:
                 axes[idx].plot(ranges[idx], var_model[d][c], color='red')
