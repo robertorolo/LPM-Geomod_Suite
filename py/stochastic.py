@@ -136,7 +136,7 @@ def ar2gas_dual_krig(cov, x, y, z, prop, grid):
     print('Took {} seconds'.format(round((t2-t1),2)))
     return tp
 
-def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name):
+def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name, phase):
     coords_matrix = np.vstack((x,y,z)).T
     nodes = grid.locations()
     interpolated_variables = []
@@ -162,7 +162,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
                 interpolated_variables.append(results)
 
             if keep_variables == '1':
-                prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
+                prop_name = phase+'_interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                 sgems.set_property(tg_grid_name, prop_name, results.tolist())
 
     else:
@@ -185,7 +185,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
                 interpolated_variables.append(results)
             
             if keep_variables == '1':
-                prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
+                prop_name = phase+'_interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
                 sgems.set_property(tg_grid_name, prop_name, results.tolist())
 
     print('Finished interpolating!')
@@ -408,7 +408,7 @@ class stochastic: #aqui vai o nome do plugin
             x, y, z = np.array(sgems.get_X(pt_grid_name))[nan_filter], np.array(sgems.get_Y(pt_grid_name))[nan_filter], np.array(sgems.get_Z(pt_grid_name))[nan_filter]
             
             var_type = 'variable'
-            interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name)
+            interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name, 'first_interpolation')
             interpolated_variables = np.array(interpolated_variables)
             
             #calculating probs
@@ -473,6 +473,44 @@ class stochastic: #aqui vai o nome do plugin
         if keep_variables == '1':
             for idx, i in enumerate(reals):
                 sgems.set_property(tg_grid_name, 'p-field_real_'+str(idx), i.tolist())
+
+        #re estimating variables
+        print('Re-interpolating variables to uncertainty zone...')
+
+        interpolated_variables = interpolate_variables(x, y, z, variables, codes, sim_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name, 'second_interpolation')
+        interpolated_variables = np.array(interpolated_variables)
+        
+        #calculating probs
+        print('Calculating probabilities...')
+        t1 = time.time()
+        probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in interpolated_variables.T])
+        probs_matrix = probs_matrix.T
+        
+        if keep_variables == '1':
+            for i, p in enumerate(probs_matrix):
+                sgems.set_property(tg_grid_name, 'second_interpolation_'+pt_props_name[i]+'_gamma_'+str(gamma), p.tolist())
+        t2 = time.time()
+        print('Took {} seconds'.format(round((t2-t1), 2)))
+
+        #sampling cats
+        print('Sampling categories using the p-fields and building realizations...')
+        t1 = time.time()
+        
+        probs_matrix = probs_matrix.T
+        for real_idx, r in enumerate(reals):
+            realization = []
+            for idx, b in enumerate(np.array(r).T):
+                if np.isnan(b):
+                    realization.append(f_geomodel[idx])
+                else:
+                    position = cat_random_sample(probs_matrix[idx], b)
+                    realization.append(int(codes[position]))
+            sgems.set_property(tg_grid_name, tg_prop_name+'_real_'+str(real_idx), realization)
+
+        t2 = time.time()
+        print('Took {} seconds'.format(round((t2-t1), 2)))
+
+        print('Finished!')
 
         return True
 
