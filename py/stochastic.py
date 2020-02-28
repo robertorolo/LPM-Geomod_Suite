@@ -390,22 +390,22 @@ class stochastic: #aqui vai o nome do plugin
         #getting grid
         a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
         
+        variables = []
+        nan_filters = []
+        for v in pt_props_name:
+            values = np.array(sgems.get_property(pt_grid_name, v))
+            nan_filter = np.isfinite(values)
+            filtered_values = values[nan_filter]
+            nan_filters.append(nan_filter)
+            variables.append(filtered_values)
+        nan_filter = np.product(nan_filters, axis=0)
+        nan_filter = nan_filter == 1
+
+        x, y, z = np.array(sgems.get_X(pt_grid_name))[nan_filter], np.array(sgems.get_Y(pt_grid_name))[nan_filter], np.array(sgems.get_Z(pt_grid_name))[nan_filter]
+
         #interpolating to all grid nodes if not re-using properties
         if re_use == '0':
             print('Not re-using properties')
-            
-            variables = []
-            nan_filters = []
-            for v in pt_props_name:
-                values = np.array(sgems.get_property(pt_grid_name, v))
-                nan_filter = np.isfinite(values)
-                filtered_values = values[nan_filter]
-                nan_filters.append(nan_filter)
-                variables.append(filtered_values)
-            nan_filter = np.product(nan_filters, axis=0)
-            nan_filter = nan_filter == 1
-
-            x, y, z = np.array(sgems.get_X(pt_grid_name))[nan_filter], np.array(sgems.get_Y(pt_grid_name))[nan_filter], np.array(sgems.get_Z(pt_grid_name))[nan_filter]
             
             var_type = 'variable'
             interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name, 'first_interpolation')
