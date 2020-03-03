@@ -302,12 +302,28 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>39</x>
-     <y>460</y>
+     <x>62</x>
+     <y>537</y>
     </hint>
     <hint type="destinationlabel">
-     <x>42</x>
-     <y>475</y>
+     <x>65</x>
+     <y>573</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>checkBox_3</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>filechooser_3</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>172</x>
+     <y>423</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>171</x>
+     <y>449</y>
     </hint>
    </hints>
   </connection>
