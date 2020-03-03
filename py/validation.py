@@ -118,9 +118,9 @@ class validation: #aqui vai o nome do plugin
         print('Calculating variogrmas...')
         #getting variograms
         print('Getting variogram models')
-        use_model_file = self.params['checkBox']['value'] 
+        use_model_file = self.params['checkBox_3']['value'] 
         if use_model_file == '1':
-            var_path = self.params['filechooser_2']['value']
+            var_path = self.params['filechooser_3']['value']
             variograms = helpers.modelfile_to_ar2gasmodel(var_path)
             if len(variograms) == 1:
                 values_covs = list(variograms.values())
@@ -138,6 +138,15 @@ class validation: #aqui vai o nome do plugin
                 variograms = dict(zip(codes, varg_lst))
         
         dimz = grid.dim()[2]
+        pts_exp_vars = 0
+        if dimz > 1:
+            dimension = 3
+        else:
+            dimension = 2
+        plot_exp = self.params['checkBox']['value']
+        if plot_exp == '1':
+            exp_path = self.params['filechooser_2']['value'] 
+            pts_exp_vars = helpers.read_exp_vars(exp_path, dimension)
         
         exp_vars_dict = {'ew':{}, 'ew_mean':{}, 'ns':{}, 'ns_mean':{}, 'z':{}, 'z_mean':{}}
         var_model_dict = {'ew':{}, 'ns':{}, 'z':{}}
@@ -212,6 +221,9 @@ import matplotlib.pyplot as plt
 
 nan = float('nan')
 
+plot_exp = int({})
+pts_exp_var = {}
+
 dimz = {}
 if dimz > 1:
     dirs = ['ew', 'ns', 'z']
@@ -265,6 +277,9 @@ def plt_vargs(var_exp, var_model, flname):
                 axes[idx].plot(ranges[idx], var_model[d][0], color='red')
             else:
                 axes[idx].plot(ranges[idx], var_model[d][c], color='red')
+            
+            if plot_exp == 1:
+                axes[idx].plot(pts_exp_var[c][d]['x'], pts_exp_var[c][d]['y'], linestyle='dashed', marker='x', color='blue')
                 
 		#fig.title('Variogram '+str(int(c)))
         fig.savefig(flname_c)
@@ -284,7 +299,7 @@ plt.ylabel('Actual')
 figure = sns_plot.get_figure()
 figure.savefig('{}')
 
-        '''.format(dimz, cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path, np.array2string(final_cm, separator=', '), con_mat_path)
+        '''.format(plot_exp, pts_exp_vars, dimz, cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path, np.array2string(final_cm, separator=', '), con_mat_path)
 
         #writing script
         f = open(scipt_path, 'w')
