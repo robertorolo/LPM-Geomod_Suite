@@ -35,7 +35,7 @@ def prop_reals(reals, cats):
   
 def std_array(a, var):
     a = np.array(a)
-    std_a = (a - np.min(a))/(np.max(a) - np.min(a))
+    std_a = (a - np.nanmin(a))/(np.nanmax(a) - np.nanmin(a))
     std_a = std_a * var
     return std_a.tolist()
 
@@ -137,6 +137,8 @@ class validation: #aqui vai o nome do plugin
             else:
                 variograms = dict(zip(codes, varg_lst))
         
+        dimz = grid.dim()[2]
+        
         exp_vars_dict = {'ew':{}, 'ew_mean':{}, 'ns':{}, 'ns_mean':{}, 'z':{}, 'z_mean':{}}
         var_model_dict = {'ew':{}, 'ns':{}, 'z':{}}
         sx, sy, sz = grid.cell_size()[0], grid.cell_size()[1], grid.cell_size()[2]
@@ -158,10 +160,12 @@ class validation: #aqui vai o nome do plugin
             exp_vars_dict['ns'][c] = exp_vars_ns
             exp_vars_dict['ns_mean'][c] = mean_ns.tolist()
 
-            exp_vars_z = [ar2gas.compute.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in indicators]
-            mean_z = np.mean(np.array(exp_vars_z), axis=0)
-            exp_vars_dict['z'][c] = exp_vars_z
-            exp_vars_dict['z_mean'][c] = mean_z.tolist()
+            if dimz > 1:
+            
+                exp_vars_z = [ar2gas.compute.compute_variogram(grid, data, (0, 0, 1), nlags, (0, 0, 0), 0) for data in indicators]
+                mean_z = np.mean(np.array(exp_vars_z), axis=0)
+                exp_vars_dict['z'][c] = exp_vars_z
+                exp_vars_dict['z_mean'][c] = mean_z.tolist()
 
         print('Calculating variogram models...')
         for c in codes:
@@ -174,21 +178,23 @@ class validation: #aqui vai o nome do plugin
         
             model_var_ew = [sill-cov.compute([0,0,0],[pt,0,0]) for pt in rangeinx]
             if std_var == '1':
-                var_model_dict['ew'][c1] = std_array(model_var_ew, np.max(exp_vars_dict['ew_mean'][c]))
+                var_model_dict['ew'][c1] = std_array(model_var_ew, np.nanmax(exp_vars_dict['ew_mean'][c]))
             else:
                 var_model_dict['ew'][c1] = model_var_ew
 
             model_var_ns = [sill-cov.compute([0,0,0],[0,pt,0]) for pt in rangeiny]
             if std_var == '1':
-                var_model_dict['ns'][c1] = std_array(model_var_ns, np.max(exp_vars_dict['ns_mean'][c]))
+                var_model_dict['ns'][c1] = std_array(model_var_ns, np.nanmax(exp_vars_dict['ns_mean'][c]))
             else:
                 var_model_dict['ns'][c1] = model_var_ns
 
-            model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
-            if std_var == '1':
-                var_model_dict['z'][c1] = std_array(model_var_z, np.max(exp_vars_dict['z_mean'][c]))
-            else:
-                var_model_dict['z'][c1] = model_var_z
+            if dimz > 1:
+            
+                model_var_z = [sill-cov.compute([0,0,0],[0,0,pt]) for pt in rangeinz]
+                if std_var == '1':
+                    var_model_dict['z'][c1] = std_array(model_var_z, np.nanmax(exp_vars_dict['z_mean'][c]))
+                else:
+                    var_model_dict['z'][c1] = model_var_z
                 
         #back flag
         print('Getting closest node for all realizations...')
@@ -205,6 +211,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 nan = float('nan')
+
+dimz = {}
+if dimz > 1:
+    dirs = ['ew', 'ns', 'z']
+    dp = 3
+else:
+    dirs = ['ew', 'ns']
+    dp = 2
 
 cat_dict = {}
 reals_props = {}
@@ -233,8 +247,8 @@ flname = '{}'
 def plt_vargs(var_exp, var_model, flname):
     for c in codes:
         flname_c = flname+'_'+str(c)
-        fig, axes = plt.subplots(1,3, constrained_layout=True, figsize=(15,5))
-        for idx, d in enumerate(['ew', 'ns', 'z']):
+        fig, axes = plt.subplots(1,dp, constrained_layout=True, figsize=(15,5))
+        for idx, d in enumerate(dirs):
             #if np.all(model_keys):	
 			#	axes[idx].plot(ranges[idx], var_model[d][0], color='red')
 			#else:
@@ -270,7 +284,7 @@ plt.ylabel('Actual')
 figure = sns_plot.get_figure()
 figure.savefig('{}')
 
-        '''.format(cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path, np.array2string(final_cm, separator=', '), con_mat_path)
+        '''.format(dimz, cat_dict, reals_props, hist_path, exp_vars_dict, var_model_dict, rangeinx, rangeiny, rangeinz, varg_path, np.array2string(final_cm, separator=', '), con_mat_path)
 
         #writing script
         f = open(scipt_path, 'w')
