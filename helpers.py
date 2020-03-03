@@ -226,3 +226,22 @@ def nn(x, y, z, var, grid):
     results = knn(grids_points_array)
 
     return results
+
+def read_exp_vars(path, dimensions):
+    f = open(path, 'r')
+    lines = f.readlines()
+    dirs = ['ew', 'ns', 'z']
+    final_dic = {}
+    for idx, l in enumerate(lines):
+        if len(l) == 2:
+            code = int(l)
+            final_dic[code] = {}
+            for d in range(dimensions):
+                x_values_str = lines[idx+5+(d*7)][7:-5]
+                x = [float(i) for i in x_values_str.split()]
+                y_values_str = lines[idx+6+(d*7)][7:-5]
+                y = [float(i) for i in y_values_str.split()]
+                pairs_str = lines[idx+7+(d*7)][11:-9]
+                pairs = [int(i) for i in pairs_str.split()]
+                final_dic[code][dirs[d]]={'x':x, 'y':y, 'pairs':pairs}
+    return final_dic
