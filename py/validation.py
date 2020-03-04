@@ -62,6 +62,7 @@ class validation: #aqui vai o nome do plugin
 
     def execute(self):
       
+        print('Getting variables...')
         #aqui vai o codigo
         #getting variables
         grid_name = self.params['gridselectorbasic']['value']
@@ -100,11 +101,9 @@ class validation: #aqui vai o nome do plugin
         x, y, z = np.array(sgems.get_X(rt_grid_name))[nan_mask_pts], np.array(sgems.get_Y(rt_grid_name))[nan_mask_pts], np.array(sgems.get_Z(rt_grid_name))[nan_mask_pts]
         grid = helpers.ar2gemsgrid_to_ar2gasgrid(grid_name, '')
         target = helpers.nn(x, y, z, values, grid)
-        sgems.set_property(grid_name, 'target', target.tolist())
         #adding nan to target 
-        for idx, i in enumerate(nan_mask):
-            if i is True:
-                target[idx] = float('nan')
+        target[nan_mask]=float('nan')
+        sgems.set_property(grid_name, 'target', target.tolist())
                 
         cat_dict = {}
         w = np.array([1/len(target)] * len(target))
