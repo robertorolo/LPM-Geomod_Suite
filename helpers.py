@@ -230,7 +230,7 @@ def nn(x, y, z, var, grid):
 def read_exp_vars(path, dimensions):
     f = open(path, 'r')
     lines = f.readlines()
-    dirs = ['ew', 'ns', 'z']
+    dirs = ['ns', 'ew', 'z']
     final_dic = {}
     for idx, l in enumerate(lines):
         if len(l) == 2:
