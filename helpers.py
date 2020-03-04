@@ -241,6 +241,7 @@ def read_exp_vars(path, dimensions):
                 x = [float(i) for i in x_values_str.split()]
                 y_values_str = lines[idx+6+(d*7)][7:-5]
                 y = [float(i) for i in y_values_str.split()]
+                y=np.where(np.array(y)==-9e+99, float('nan'), np.array(y)).tolist()
                 pairs_str = lines[idx+7+(d*7)][11:-9]
                 pairs = [int(i) for i in pairs_str.split()]
                 final_dic[code][dirs[d]]={'x':x, 'y':y, 'pairs':pairs}
