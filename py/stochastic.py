@@ -446,24 +446,59 @@ class stochastic: #aqui vai o nome do plugin
             props.append(entropies)
 
         #downscaling probs and entropies if needed
+        print(fx, fy, fz)
         if fx != 1 or fy != 1 or fz != 1:
             a2g_grid, props = helpers.downscale_properties(a2g_grid, props, fx, fy, fz)
             if keep_variables == '1':
                 helpers.ar2gasgrid_to_ar2gems('stochastic_downscaled_grid', a2g_grid)
             tg_grid_name = 'stochastic_downscaled_grid'
 
-        #getting the mask and creating a masked grid for entropy cutoff
-        mask = props[-1] >= cutoff
-        mask = np.where(mask == True, 1, 0)
-        if hasattr(a2g_grid, 'mask'): 
-            final_mask = a2g_grid.mask() * mask
+            #getting mask
+            mask = props[-1] >= cutoff
+            mask = np.where(mask == True, 1, 0)
+            if hasattr(a2g_grid, 'mask'): 
+                final_mask = a2g_grid.mask() * mask
+            else:
+                final_mask = mask
+            final_mask = np.where(final_mask == 1, True, False)
+
+            cgrid = ar2gas.data.CartesianGrid(a2g_grid.dim()[0], a2g_grid.dim()[1], a2g_grid.dim()[2],
+                                                  a2g_grid.cell_size()[0], a2g_grid.cell_size()[1], a2g_grid.cell_size()[2],
+                                                  a2g_grid.origin()[0], a2g_grid.origin()[1], a2g_grid.origin()[2])
+            sim_grid = ar2gas.data.MaskedGrid(cgrid, final_mask.tolist())            
+
+            #re estimating variables
+            print('Re-interpolating variables to uncertainty zone...')
+
+            interpolated_variables = interpolate_variables(x, y, z, variables, codes, sim_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name, 'second_interpolation')
+            interpolated_variables = np.array(interpolated_variables)
+
+            #calculating probs
+            print('Calculating probabilities...')
+            t1 = time.time()
+            probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in interpolated_variables.T])
+            probs_matrix = probs_matrix.T
+        
+            if keep_variables == '1':
+                for i, p in enumerate(probs_matrix):
+                    sgems.set_property(tg_grid_name, 'second_interpolation_'+pt_props_name[i]+'_gamma_'+str(gamma), p.tolist())
+            t2 = time.time()
+            print('Took {} seconds'.format(round((t2-t1), 2)))
+
         else:
-            final_mask = mask
-        final_mask = np.where(final_mask == 1, True, False)
-        cgrid = ar2gas.data.CartesianGrid(a2g_grid.dim()[0], a2g_grid.dim()[1], a2g_grid.dim()[2],
-                                          a2g_grid.cell_size()[0], a2g_grid.cell_size()[1], a2g_grid.cell_size()[2],
-                                          a2g_grid.origin()[0], a2g_grid.origin()[1], a2g_grid.origin()[2])
-        sim_grid = ar2gas.data.MaskedGrid(cgrid, final_mask.tolist())
+            #getting mask
+            mask = props[-1] >= cutoff
+            mask = np.where(mask == True, 1, 0)
+            if hasattr(a2g_grid, 'mask'): 
+                final_mask = a2g_grid.mask() * mask
+            else:
+                final_mask = mask
+            final_mask = np.where(final_mask == 1, True, False)
+
+            cgrid = ar2gas.data.CartesianGrid(a2g_grid.dim()[0], a2g_grid.dim()[1], a2g_grid.dim()[2],
+                                                  a2g_grid.cell_size()[0], a2g_grid.cell_size()[1], a2g_grid.cell_size()[2],
+                                                  a2g_grid.origin()[0], a2g_grid.origin()[1], a2g_grid.origin()[2])
+            sim_grid = ar2gas.data.MaskedGrid(cgrid, final_mask.tolist())
 
         #creating the frozen geologic model
         f_geomodel = build_geomodel('Indicators', props[:-1], codes, a2g_grid, tg_grid_name, tg_prop_name, keep_variables)
@@ -473,24 +508,6 @@ class stochastic: #aqui vai o nome do plugin
         if keep_variables == '1':
             for idx, i in enumerate(reals):
                 sgems.set_property(tg_grid_name, 'p-field_real_'+str(idx), i.tolist())
-
-        #re estimating variables
-        print('Re-interpolating variables to uncertainty zone...')
-
-        interpolated_variables = interpolate_variables(x, y, z, variables, codes, sim_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name, 'second_interpolation')
-        interpolated_variables = np.array(interpolated_variables)
-        
-        #calculating probs
-        print('Calculating probabilities...')
-        t1 = time.time()
-        probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in interpolated_variables.T])
-        probs_matrix = probs_matrix.T
-        
-        if keep_variables == '1':
-            for i, p in enumerate(probs_matrix):
-                sgems.set_property(tg_grid_name, 'second_interpolation_'+pt_props_name[i]+'_gamma_'+str(gamma), p.tolist())
-        t2 = time.time()
-        print('Took {} seconds'.format(round((t2-t1), 2)))
 
         #sampling cats
         print('Sampling categories using the p-fields and building realizations...')
