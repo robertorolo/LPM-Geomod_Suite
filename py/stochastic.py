@@ -251,16 +251,21 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
     return geomodel
     
 #Simulation functions
-def tbsim(mgrid, cov, nlines, nreal, seed):
+def tbsim(mgrid, cov, nlines, nreal, seed, x, y, z):
     print('Simulating p-field')
     t1 = time.time()
 
+
+    hd_grid = ar2gas.data.PointSet(x, y, z)
+    prop = np.zeros(hd_grid.size())
     mask = mgrid.mask()
 
-    tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov)
+    tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov, hd_grid, prop)
     results = tbsim.simulate(mgrid, nreal, 0)
+    print(results[0])
     results = [norm.cdf(lst) for lst in results]
-    
+    print(results[0])
+
     results_list = []
     for r in results:
         counter = 0
@@ -503,7 +508,7 @@ class stochastic: #aqui vai o nome do plugin
         f_geomodel = build_geomodel('Indicators', props[:-1], codes, a2g_grid, tg_grid_name, tg_prop_name, keep_variables)
           
         #simulating p-fields
-        reals = tbsim(sim_grid, pfieldvar, nlines, nreals, seed)
+        reals = tbsim(sim_grid, pfieldvar, nlines, nreals, seed, x, y, z)
         if keep_variables == '1':
             for idx, i in enumerate(reals):
                 sgems.set_property(tg_grid_name, 'p-field_real_'+str(idx), i.tolist())
