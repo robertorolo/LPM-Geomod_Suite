@@ -446,7 +446,6 @@ class stochastic: #aqui vai o nome do plugin
             props.append(entropies)
 
         #downscaling probs and entropies if needed
-        print(fx, fy, fz)
         if fx != 1 or fy != 1 or fz != 1:
             a2g_grid, props = helpers.downscale_properties(a2g_grid, props, fx, fy, fz)
             if keep_variables == '1':
