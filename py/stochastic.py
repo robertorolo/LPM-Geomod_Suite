@@ -262,9 +262,7 @@ def tbsim(mgrid, cov, nlines, nreal, seed, x, y, z):
 
     tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov, hd_grid, prop)
     results = tbsim.simulate(mgrid, nreal, 0)
-    print(results[0])
     results = [norm.cdf(lst) for lst in results]
-    print(results[0])
 
     results_list = []
     for r in results:
