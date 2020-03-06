@@ -251,16 +251,18 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
     return geomodel
     
 #Simulation functions
-def tbsim(mgrid, cov, nlines, nreal, seed, x, y, z):
+def tbsim(mgrid, cov, nlines, nreal, seed, x, y, z, cond):
     print('Simulating p-field')
     t1 = time.time()
 
 
-    hd_grid = ar2gas.data.PointSet(x, y, z)
-    prop = np.zeros(hd_grid.size())
     mask = mgrid.mask()
-
-    tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov, hd_grid, prop)
+    if cond =='1':
+        hd_grid = ar2gas.data.PointSet(x, y, z)
+        prop = np.zeros(hd_grid.size())
+        tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov, hd_grid, prop)
+    else:
+        tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov)
     results = tbsim.simulate(mgrid, nreal, 0)
     results = [norm.cdf(lst) for lst in results]
 
@@ -328,10 +330,10 @@ class stochastic: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        #print("dicionario de parametros: ", params)
+        print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        #read_params(params) #para nao printar comente essa linha
+        read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -365,7 +367,8 @@ class stochastic: #aqui vai o nome do plugin
         #p-field tab variables
         nreals = int(self.params['spinBox']['value']) 
         seed = int(self.params['spinBox_3']['value']) 
-        nlines = int(self.params['spinBox_2']['value']) 
+        nlines = int(self.params['spinBox_2']['value'])
+        cond = self.params['conditional']['value'] 
         
         #getting variograms
         p = self.params
