@@ -258,10 +258,12 @@ def tbsim(mgrid, cov, nlines, nreal, seed, x, y, z, cond):
 
     mask = mgrid.mask()
     if cond =='1':
+        print('Conditional simulation')
         hd_grid = ar2gas.data.PointSet(x, y, z)
         prop = np.zeros(hd_grid.size())
         tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov, hd_grid, prop)
     else:
+        print('Unconditional simulation')
         tbsim = ar2gas.compute.Tbsim.multi_realization(seed, nreal, mgrid, nlines, cov)
     results = tbsim.simulate(mgrid, nreal, 0)
     results = [norm.cdf(lst) for lst in results]
@@ -330,10 +332,10 @@ class stochastic: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -509,7 +511,7 @@ class stochastic: #aqui vai o nome do plugin
         f_geomodel = build_geomodel('Indicators', props[:-1], codes, a2g_grid, tg_grid_name, tg_prop_name, keep_variables)
           
         #simulating p-fields
-        reals = tbsim(sim_grid, pfieldvar, nlines, nreals, seed, x, y, z)
+        reals = tbsim(sim_grid, pfieldvar, nlines, nreals, seed, x, y, z, cond)
         if keep_variables == '1':
             for idx, i in enumerate(reals):
                 sgems.set_property(tg_grid_name, 'p-field_real_'+str(idx), i.tolist())
