@@ -269,31 +269,6 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="0" colspan="2">
-           <widget class="QComboBox" name="comboBox_2">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <item>
-             <property name="text">
-              <string>Ar2gas dual kriging </string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Dual kriging</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Global kriging</string>
-             </property>
-            </item>
-           </widget>
-          </item>
          </layout>
         </widget>
        </item>
