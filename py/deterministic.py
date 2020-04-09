@@ -56,95 +56,6 @@ def refinement_zone(grid, geomodel):
 
     return refinement_prop, indices_list
 
-def lhs(coords_matrix, cov, global_krig=False):
-    print('Calculating LHS matrix...')
-    t1 = time.time()
-    krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
-    lhs = krig_cov.lhs(coords_matrix)
-    n = len(coords_matrix)
-    ones = np.ones((n+1, n+1))
-    ones[:-1,:-1] = lhs
-    ones[n,n] = 0
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1), 2)))
-    print('Inverting LHS matrix...')
-    t1 = time.time()
-    lhs_inv = np.linalg.inv(ones)
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1), 2)))
-    return lhs_inv
-
-def rhs(coords, nodes, cov):
-    print('Building RHS matrix...')
-    krig_cov = ar2gas.compute.KrigingCovariance(1., cov)
-    t1 = time.time()
-    mat = []
-    for pp, pg in product(coords, nodes):
-        mat.append(krig_cov.compute(pg, pp))
-    mat = np.array(mat).reshape((len(coords), len(nodes)))
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1), 2)))
-    return mat
-
-def global_krig(grid, lhs_inv, rhs, var):
-    t1 = time.time()
-    var = np.append(var, 0)
-    zeros = np.zeros((rhs.shape[0]+1, rhs.shape[1]))
-    zeros[:-1,:] = rhs
-    print('Computing weights...')
-    t1 = time.time()
-    weights = np.dot(lhs_inv, zeros)
-    print('Sum of wehigths: {}'.format(round(np.sum(weights[:-1])), 2))
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1), 2)))
-    print('Computing results by global kriging...')
-    t1 = time.time()
-    partial_results = np.dot(var, weights)
-
-    if hasattr(grid, 'mask'):
-        mask = grid.mask()
-
-        results = np.ones(len(mask))*float('nan')
-        mg_idx = 0
-        for idx, maskval in enumerate(mask):
-            if maskval == True:
-                results[idx] = partial_results[mg_idx]
-                mg_idx = mg_idx+1
-    else:
-        results = partial_results
-    
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1), 2)))
-    return results
-
-def dual_krig(grid, lhs_inv, rhs, var):
-    var = np.append(var, 0)
-    print('Computing weights...')
-    t1 = time.time()
-    weights = np.dot(lhs_inv, var)
-    print('Sum of wehigths: {}'.format(round(np.sum(weights[:-1])), 2))
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1), 2)))
-    print('Computing results by dual kriging...')
-    t1 = time.time()
-    partial_results = np.dot(rhs.T, weights[:-1]) + weights[-1:]
-
-    if hasattr(grid, 'mask'):
-        mask = grid.mask()
-
-        results = np.ones(len(mask))*float('nan')
-        mg_idx = 0
-        for idx, maskval in enumerate(mask):
-            if maskval == True:
-                results[idx] = partial_results[mg_idx]
-                mg_idx = mg_idx+1
-    else:
-        results = partial_results
-    
-    t2 = time.time()
-    print('Took {} seconds'.format(round((t2-t1),2)))
-    return results
-
 def ar2gas_dual_krig(cov, x, y, z, prop, grid):
     print('Computing results by ar2gas dual kriging...')
     t1 = time.time()
@@ -174,23 +85,13 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
 
     if len(variograms) == 1:
         print('Interpolating using the same covariance model for all variables')
-        cov = list(variograms.values())[0]
-        if krig_type != 'Ar2gas dual kriging ':
-            lhs_inv = lhs(coords_matrix, cov)
-            rhs_var = rhs(coords_matrix, nodes, cov)  
+        cov = list(variograms.values())[0] 
 
         for idx, v in enumerate(variables):
             rt = int(codes[idx])
             print('Interpolating RT {}'.format(rt))
-            if krig_type == "Dual kriging":
-                results = dual_krig(grid, lhs_inv, rhs_var, v)
-                interpolated_variables.append(results)
-            elif krig_type == 'Global kriging':
-                results = global_krig(grid, lhs_inv, rhs_var, v)
-                interpolated_variables.append(results)
-            else:
-                results = ar2gas_dual_krig(cov, x, y, z, v, grid)
-                interpolated_variables.append(results)
+            results = ar2gas_dual_krig(cov, x, y, z, v, grid)
+            interpolated_variables.append(results)
 
             if keep_variables == '1':
                 prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
@@ -201,19 +102,8 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type
             rt = int(codes[idx])
             print('Interpolating using one covariance model per variables')
             print('Interpolating RT {}'.format(rt))
-            if krig_type != 'Ar2gas dual kriging ':
-                lhs_inv = lhs(coords_matrix, variograms[rt])
-                rhs_var = rhs(coords_matrix, nodes, variograms[rt])
-            
-            if krig_type == "Dual kriging":
-                results = dual_krig(grid, lhs_inv, rhs_var, v)
-                interpolated_variables.append(results)
-            elif krig_type == "Global kriging":
-                results = global_krig(grid, lhs_inv, rhs_var, v)
-                interpolated_variables.append(results)
-            else:
-                results = ar2gas_dual_krig(variograms[rt], x, y, z, v, grid)
-                interpolated_variables.append(results)
+            results = ar2gas_dual_krig(variograms[rt], x, y, z, v, grid)
+            interpolated_variables.append(results)
             
             if keep_variables == '1':
                 prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
@@ -325,7 +215,6 @@ class deterministic: #aqui vai o nome do plugin
         n_var = self.params['orderedpropertyselector']['count']
         var_names = self.params['orderedpropertyselector']['value'].split(';')
         codes = [v.split('_')[-1] for v in var_names]
-        krig_type = self.params['comboBox_2']['value']
 
         #getting variograms
         print('Getting variogram models')
