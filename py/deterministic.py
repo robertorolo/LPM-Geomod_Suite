@@ -4,7 +4,7 @@
 #importe aqui os pacotes necessarios
 import sgems
 import numpy as np
-np.set_printoptions(threshold=np.inf)
+#np.set_printoptions(threshold=np.inf)
 import helpers
 import ar2gas
 from itertools import product
@@ -57,7 +57,7 @@ def refinement_zone(grid, geomodel):
     return refinement_prop, indices_list
 
 def ar2gas_dual_krig(cov, x, y, z, prop, grid):
-    print('Computing results by ar2gas dual kriging...')
+    
     t1 = time.time()
     krig_cov = ar2gas.compute.KrigingCovariance(1.,cov)
     ps = ar2gas.data.PointSet(x, y, z)
@@ -78,9 +78,9 @@ def ar2gas_dual_krig(cov, x, y, z, prop, grid):
     print('Took {} seconds'.format(round((t2-t1),2)))
     return tp
 
-def interpolate_variables(x, y, z, variables, codes, grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name):
-    coords_matrix = np.vstack((x,y,z)).T
-    nodes = grid.locations()
+def interpolate_variables(x, y, z, variables, codes, grid, variograms, keep_variables, var_type, tg_prop_name, tg_grid_name):
+    print('Computing results by ar2gas dual kriging...')
+
     interpolated_variables = []
 
     if len(variograms) == 1:
@@ -212,7 +212,6 @@ class deterministic: #aqui vai o nome do plugin
         tg_prop_name = self.params['lineEdit']['value']
         keep_variables = self.params['checkBox_2']['value']
         props_grid_name = self.params['gridselectorbasic']['value']
-        n_var = self.params['orderedpropertyselector']['count']
         var_names = self.params['orderedpropertyselector']['value'].split(';')
         codes = [v.split('_')[-1] for v in var_names]
 
@@ -253,7 +252,7 @@ class deterministic: #aqui vai o nome do plugin
 
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
         
-        interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, tg_grid_name)
+        interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, keep_variables, var_type, tg_prop_name, tg_grid_name)
 
         #creating a geologic model
         geomodel = build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name)
@@ -298,7 +297,7 @@ class deterministic: #aqui vai o nome do plugin
 
                 masked_grid = ar2gas.data.MaskedGrid(downscaled_grid, mask)
     
-                interpolated_variables = interpolate_variables(x, y, z, variables, codes, masked_grid, variograms, krig_type, keep_variables, var_type, tg_prop_name, grid_name)
+                interpolated_variables = interpolate_variables(x, y, z, variables, codes, masked_grid, variograms, keep_variables, var_type, tg_prop_name, grid_name)
 
                 geomodel = build_refined_geomodel(interpolated_variables, downscaled_props, codes, var_type)
 
