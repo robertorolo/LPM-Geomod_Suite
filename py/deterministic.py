@@ -83,7 +83,27 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, keep_vari
 
     interpolated_variables = []
 
-    if len(variograms) == 1:
+    if len(variograms) == 0:
+        print('Interpolating using the same covariance model for all variables')
+
+        for idx, v in enumerate(variables):
+            rt = int(codes[idx])
+            print('Interpolating RT {}'.format(rt))
+            if var_type == 'Indicators':
+                mask = v==1
+            else:
+                mask = v < 0
+            var_range = helpers.max_dist(x, y, z, mask, rt, grid)
+            print('Estimated range is {}'.format(var_range))
+            cov = [ar2gas.compute.Covariance.nugget(0.01), ar2gas.compute.Covariance.gaussian(0.99, var_range, var_range, var_range, 0., 0., 0.)]
+            results = ar2gas_dual_krig(cov, x, y, z, v, grid)
+            interpolated_variables.append(results)
+
+            if keep_variables == '1':
+                prop_name = 'interpolated_'+var_type+'_'+tg_prop_name+'_'+str(rt)
+                sgems.set_property(tg_grid_name, prop_name, results.tolist())
+
+    elif len(variograms) == 1:
         print('Interpolating using the same covariance model for all variables')
         cov = list(variograms.values())[0] 
 
@@ -217,28 +237,7 @@ class deterministic: #aqui vai o nome do plugin
 
         #getting variograms
         print('Getting variogram models')
-        use_model_file = self.params['checkBox']['value'] 
-        if use_model_file == '1':
-            path = self.params['filechooser']['value']
-            variograms = helpers.modelfile_to_ar2gasmodel(path)
-            if len(variograms) == 1:
-                values_covs = list(variograms.values())
-                varg_lst = values_covs * len(codes)
-                variograms = {}
-                variograms[0] = varg_lst[0]
-        else:
-            p = self.params
-            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(p)
-            if len(varg_lst) == 1:
-                varg_lst = varg_lst * len(codes)
-                variograms = {}
-                variograms[0] = varg_lst[0]
-            else:
-                variograms = dict(zip(codes, varg_lst))
-            
-        #interpolating variables
-        a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
-        
+
         variables = []
         nan_filters = []
         for v in var_names:
@@ -251,6 +250,31 @@ class deterministic: #aqui vai o nome do plugin
         nan_filter = nan_filter == 1
 
         x, y, z = np.array(sgems.get_X(props_grid_name))[nan_filter], np.array(sgems.get_Y(props_grid_name))[nan_filter], np.array(sgems.get_Z(props_grid_name))[nan_filter]
+
+        use_model_file = self.params['checkBox']['value'] 
+        if use_model_file == '1':
+            path = self.params['filechooser']['value']
+            variograms = helpers.modelfile_to_ar2gasmodel(path)
+            if len(variograms) == 1:
+                values_covs = list(variograms.values())
+                varg_lst = values_covs * len(codes)
+                variograms = {}
+                variograms[0] = varg_lst[0]
+        else:
+            p = self.params
+            varg_lst = helpers.ar2gemsvarwidget_to_ar2gascovariance(p)
+            if len(varg_lst) == 0:
+                variograms = {}
+            if len(varg_lst) == 1:
+                varg_lst = varg_lst * len(codes)
+                variograms = {}
+                variograms[0] = varg_lst[0]
+
+            else:
+                variograms = dict(zip(codes, varg_lst))
+            
+        #interpolating variables
+        a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
         
         interpolated_variables = interpolate_variables(x, y, z, variables, codes, a2g_grid, variograms, keep_variables, var_type, tg_prop_name, tg_grid_name)
 
