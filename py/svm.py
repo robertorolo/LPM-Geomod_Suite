@@ -27,6 +27,11 @@ def read_params(a,j=''):
         else:
             read_params(a[i],j+"['"+str(i)+"']")
 
+def str_to_float(sting):
+    splitted = sting.split('**')
+    float_val = float(splitted[0])**float(splitted[1])
+    return float_val
+
 #################################################################################################
 
 class SVM: #aqui vai o nome do plugin
@@ -39,10 +44,10 @@ class SVM: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -58,22 +63,23 @@ class SVM: #aqui vai o nome do plugin
         prop_grid_name = self.params['propertyselectornoregion']['grid'] 
         prop_name = self.params['propertyselectornoregion']['property']
 
-        cmin = float(self.params['lineEdit_3']['value'])
-        cmax = float(self.params['lineEdit_2']['value'])
-        gamma_min = float(self.params['lineEdit_5']['value'])
-        gamma_max = float(self.params['lineEdit_4']['value'])
+        cmin = str_to_float(self.params['lineEdit_3']['value'])
+        cmax = str_to_float(self.params['lineEdit_2']['value'])
+        gamma_min = str_to_float(self.params['lineEdit_5']['value'])
+        gamma_max = str_to_float(self.params['lineEdit_4']['value'])
         n = int(self.params['spinBox']['value'])
 
         n_folds = int(self.params['spinBox_2']['value'])
 
         values = np.array(sgems.get_property(prop_grid_name, prop_name))
         nan_filter = np.isfinite(values)
-        y = values[nan_filter]
+        y_val = values[nan_filter]
 
         x, y, z = np.array(sgems.get_X(prop_grid_name))[nan_filter], np.array(sgems.get_Y(prop_grid_name))[nan_filter], np.array(sgems.get_Z(prop_grid_name))[nan_filter]
         X = np.array([x, y, z]).T 
 
-        X_new = a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name).locations()
+        grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
+        X_new = grid.locations()
 
         #scaling
         scaler = MinMaxScaler(feature_range=(0, 1))
@@ -90,15 +96,16 @@ class SVM: #aqui vai o nome do plugin
         #clf
         print("Tunning parameters...")
         clf = OneVsOneClassifier(SVC())
-        model_tunning = GridSearchCV(clf, param_grid=param_grid, cv=5)
-        model_tunning.fit(X, y)
+        model_tunning = GridSearchCV(clf, param_grid=param_grid, cv=n_folds)
+        model_tunning.fit(X, y_val)
 
         print('accuracy ', model_tunning.best_score_)
         print('parameters', model_tunning.best_params_)
 
         clf = model_tunning.best_estimator_
 
-        clf.fit(X, y)
+        print("Predicting...")
+        clf.fit(X, y_val)
         results = clf.predict(X_new)
 
         sgems.set_property(tg_grid_name, tg_prop_name, results.tolist())
