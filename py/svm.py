@@ -109,6 +109,7 @@ class SVM: #aqui vai o nome do plugin
         results = clf.predict(X_new)
 
         sgems.set_property(tg_grid_name, tg_prop_name, results.tolist())
+        print('Done!')
 
         return True
 
