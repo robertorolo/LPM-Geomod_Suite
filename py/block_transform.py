@@ -36,11 +36,22 @@ def sofmax_transformation(df_lst, gamma, var_type):
 
 def entropy(prob_list):
 
-	if True in np.isnan(prob_list):
-		return float("nan")
+    if True in np.isnan(prob_list):
+        return float("nan")
 
-	else:
-		return -sum([prob*np.log2(prob) for prob in prob_list])
+    else:
+        return -sum([prob*np.log2(prob) for prob in prob_list])
+
+def prob_correction(interpolate_variables):
+    #truncating between zero and one
+    for v in interpolate_variables:
+        v[v>1] = 1
+        v[v<0] = 0
+    #summing to one
+    sum_blocks = np.sum(interpolate_variables, axis=0)
+    interpolate_variables = [i/sum_blocks for i in interpolate_variables]
+
+    return np.array(interpolate_variables)
 
 #################################################################################################
 
@@ -54,10 +65,10 @@ class block_transform: #aqui vai o nome do plugin
         self.params = params
         
         #imprimindo o dicionario de parametros
-        print("dicionario de parametros: ", params)
+        #print("dicionario de parametros: ", params)
 
         #executando a funcao exibe os valores do dicionario de parametros
-        read_params(params) #para nao printar comente essa linha
+        #read_params(params) #para nao printar comente essa linha
 
         return True
 
@@ -79,12 +90,18 @@ class block_transform: #aqui vai o nome do plugin
         
         #calculating probs
         print('Calculating probabilities...')
-        probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in props_values.T])
-        probs_matrix = probs_matrix.T
+        if var_type == "Signed Distances":
+            print('Applying softmax transformation...')
+            probs_matrix = np.array([sofmax_transformation(sds, gamma, var_type) for sds in props_values.T])
+            probs_matrix = probs_matrix.T
+            for i, p in enumerate(probs_matrix):
+                sgems.set_property(grid_name, prop_names[i]+'_gamma_'+str(gamma), p.tolist())
+        else:
+            print('Correcting proportions...')
+            probs_matrix = prob_correction(props_values)
+            for i, p in enumerate(probs_matrix):
+                sgems.set_property(grid_name, prop_names[i]+'_corrected_prop', p.tolist())
         
-        for i, p in enumerate(probs_matrix):
-           sgems.set_property(grid_name, prop_names[i]+'_gamma_'+str(gamma), p.tolist())
-           
         #calculating entropy
         print('Calculating entropy...')
         entropies = [entropy(probs) for probs in probs_matrix.T]

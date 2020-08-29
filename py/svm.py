@@ -108,7 +108,18 @@ class SVM: #aqui vai o nome do plugin
         clf.fit(X, y_val)
         results = clf.predict(X_new)
 
-        sgems.set_property(tg_grid_name, tg_prop_name, results.tolist())
+        tp = np.ones(grid.size_of_mask())*float('nan') if hasattr(grid, 'mask') else np.ones(grid.size())*float('nan')
+        if hasattr(grid, 'mask'):
+            mask = grid.mask()
+            r_idx = 0
+            for idx, val in enumerate(mask):
+                if val == True:
+                    tp[idx] = results[r_idx]
+                    r_idx = r_idx + 1
+        else:
+            tp=results
+
+        sgems.set_property(tg_grid_name, tg_prop_name, tp.tolist())
         print('Done!')
 
         return True

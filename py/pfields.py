@@ -88,8 +88,11 @@ class pfields: #aqui vai o nome do plugin
         for real_idx, r in enumerate(norm_reals):
             realization = []
             for idx, b in enumerate(np.array(r).T):
-                position = cat_random_sample(probs_matrix[idx], b)
-                realization.append(int(codes[position]))
+                if np.isnan(probs_matrix[idx]).any():
+                    realization.append(float('nan'))
+                else:
+                    position = cat_random_sample(probs_matrix[idx], b)
+                    realization.append(int(codes[position]))
             sgems.set_property(tg_grid_name, tg_prop_name+'_real_'+str(real_idx), realization)
 
         t2 = time.time()
