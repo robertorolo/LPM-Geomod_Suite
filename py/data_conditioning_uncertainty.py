@@ -159,6 +159,37 @@ def dc_parametrization(sd, function, f_min):
     
     return param
 
+def combinate(codes):
+    tps = ['pessimistic', 'intermediate', 'optimistic']
+    return list(itertools.product(tps, repeat=len(codes)))
+
+def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name):
+    #implicit binary modeling
+    if len(interpolated_variables) == 1:
+        for t in interpolated_variables[int(codes[0])]:
+            solid = np.where(interpolated_variables[int(codes[0])][t] < 0, 1, 0)
+            sgems.set_property(tg_grid_name, 'rt_{}_{}'.format(codes[0], t), solid.tolist())
+
+    #multicategorical
+    else:
+        combinations = combinate(codes)
+        for sc, c in enumerate(combinations):
+            int_variables = []
+            for idx, r in enumerate(codes):
+                int_variables.append(interpolated_variables[int(r)][c[idx]])
+            
+            geomodel = []
+            idx = 0
+            for i in np.array(int_variables).T:
+                if np.isnan(i).all():
+                    geomodel.append(float('nan'))
+                    idx=idx+1
+                else:
+                    index = i.argmin(axis=0)
+                    geomodel.append(float(codes[index]))
+                    idx=idx+1
+            sgems.set_property(tg_grid_name, tg_prop_name+'_'+str(sc), geomodel)
+
 #################################################################################################
 
 class data_conditioning_uncertainty: #aqui vai o nome do plugin
@@ -264,7 +295,10 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
         print('Done!')
 
         #Generating geological models
-        #Refining model
+        print('Building geomodel...')
+        build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name)
+
+        print('Done!')
 
         return True
 
