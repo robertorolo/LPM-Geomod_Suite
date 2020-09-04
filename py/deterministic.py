@@ -93,7 +93,7 @@ def interpolate_variables(x, y, z, variables, codes, grid, variograms, keep_vari
                 mask = v==1
             else:
                 mask = v < 0
-            var_range = helpers.max_dist(x, y, z, mask, rt, grid)
+            var_range = helpers.max_dist(x, y, z, mask, grid)
             print('Estimated range is {}'.format(var_range))
             nugget = 0.01
             cov = [ar2gas.compute.Covariance.nugget(nugget), ar2gas.compute.Covariance.gaussian(1-nugget, var_range, var_range, var_range, 0., 0., 0.)]
