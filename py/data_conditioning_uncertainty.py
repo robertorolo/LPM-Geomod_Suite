@@ -45,9 +45,9 @@ def coordinates_transform(coords, major_med, major_min, azimuth, dip, rake):
 def kernel(function, nugget, support, dist):
     support = 1.0/support
     er=support*dist
-    if function is 'gaussian':
+    if function == 'gaussian':
         return (1.0 - nugget) * np.exp(-er**1.8) if dist is not 0 else nugget
-    if function is 'spherical':
+    if function == 'spherical':
         return (1.0 - nugget) * (1.0 - ( 1.5 * er - 0.5 * (er) ** 3)) if dist is not 0 else nugget
 
 class RBF:
@@ -227,6 +227,7 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
         f_min = float(self.params['doubleSpinBox']['value'])
 
         #kernels variables
+        function = self.params['comboBox']['value']
         supports = [float(i) for i in self.params['lineEdit_5']['value'].split(',')]
         azms = [float(i) for i in self.params['lineEdit_2']['value'].split(',')]
         dips = [float(i) for i in self.params['lineEdit_3']['value'].split(',')]
@@ -248,6 +249,8 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
             if len(kernels_par[key]) == 1 and len(codes) > 1:
                 kernels_par[key] = kernels_par[key] * len(codes)
 
+        kernels_par['function'] = [function] * len(codes)
+
         print(kernels_par)
 
         #getting coordinates
@@ -266,7 +269,7 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
 
         #Interpolating variables
         a2g_grid = helpers.ar2gemsgrid_to_ar2gasgrid(tg_grid_name, tg_region_name)
-        print('Computing results by RBF using a gaussian kernel...')
+        print('Computing results by RBF using a {} kernel...'.format(function))
         interpolated_variables = {}
         
         for idx, v in enumerate(variables):
@@ -282,7 +285,7 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
             dc_param = dc_parametrization(v, dcf_param, f_min)
             for t in dc_param:
                 print('Working on {}...'.format(t))
-                rbf = RBF(x, y, z, v, function='gaussian', nugget=kernels_par['nuggets'][idx], support=kernels_par['supports'][idx], major_med=kernels_par['major_meds'][idx], major_min=kernels_par['major_mins'][idx], azimuth=kernels_par['azms'][idx], dip=kernels_par['dips'][idx], rake=kernels_par['rakes'][idx])
+                rbf = RBF(x, y, z, v, function=kernels_par['function'][idx], nugget=kernels_par['nuggets'][idx], support=kernels_par['supports'][idx], major_med=kernels_par['major_meds'][idx], major_min=kernels_par['major_mins'][idx], azimuth=kernels_par['azms'][idx], dip=kernels_par['dips'][idx], rake=kernels_par['rakes'][idx])
                 rbf.train()
                 results = rbf.predict(a2g_grid, dc_param[t])
 
