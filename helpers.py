@@ -67,12 +67,12 @@ def ar2gemsgrid_to_ar2gasgrid(grid_name, region_name):
         
     return grid
 
-def max_dist(x, y, z, mask, rt, grid):
+def max_dist(x, y, z, mask, grid):
     if z is None:
         z = np.zeros(len(x[mask]))
     sample_coords = []
     min_dist = []
-    for i, j, k in zip(x[mask], y[mask], z):
+    for i, j, k in zip(x[mask], y[mask], z[mask]):
         sample_coords.append(np.array([i, j, k]))
     grid_coords = grid.locations()
 
@@ -193,6 +193,53 @@ def singlear2gemsvarwidget_to_ar2gascovariance(p):
             cov.append(struct)
             
     return cov
+
+def ar2gemsvarwidget_to_ar2gascovariance_sim(p):
+    cov_lst = []
+    n_var = int(p['indicator_regionalization_input_2']['number_of_indicator_group'])
+
+    if p['indicator_regionalization_input_2']['Indicator_group_1']['Covariance_input']['structures_count'] == '0':
+        pass
+    
+    else:
+
+        for i in range(n_var):
+            indicator_group = "Indicator_group_" + str(i + 1)
+            n_struct = int(p['indicator_regionalization_input_2'][indicator_group]['Covariance_input']['structures_count'])
+            cov = []
+            
+            for j in range(n_struct):
+                Structure = "Structure_" + str(j + 1)
+                cov_type = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['type']
+
+                cont = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['contribution']
+
+                if cov_type == 'Nugget Covariance':
+                    nugget = ar2gas.compute.Covariance.nugget(float(cont))
+                    cov.append(nugget)
+
+                else:
+                    range1 = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range1']
+                    range2 = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range2']
+                    range3 = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['ranges']['range3']
+
+                    rake = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['rake']
+                    dip = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['dip']
+                    azimuth = p['indicator_regionalization_input_2'][indicator_group]['Covariance_input'][Structure]['Two_point_model']['angles']['azimuth']
+
+                    if cov_type == 'Spherical Covariance':
+                        struct = ar2gas.compute.Covariance.spherical(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
+                        cov.append(struct)
+                    if cov_type == 'Exponential Covariance':
+                        struct = ar2gas.compute.Covariance.exponential(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
+                        cov.append(struct)
+                    if cov_type == 'Gaussian Covariance':
+                        struct = ar2gas.compute.Covariance.gaussian(float(cont), float(range1), float(range2), float(range3), float(azimuth), float(dip), float(rake))
+                        cov.append(struct)
+
+            cov_lst.append(cov)
+
+    return cov_lst
             
 def ar2gasgrid_to_ar2gems(grid_name, grid):
     sgems.execute('NewCartesianGrid  {}::{}::{}::{}::{}::{}::{}::{}::{}::{}::0,00'.format(grid_name,

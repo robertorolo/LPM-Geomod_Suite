@@ -88,7 +88,7 @@ class RBF:
         self.weights = self.weights * dcf 
         results = np.dot(int_mat.T, self.weights)
 
-        #writing variables on grid
+        #accounting for the mask
         tp = np.ones(a2ggrid.size_of_mask())*float('nan') if hasattr(a2ggrid, 'mask') else np.ones(a2ggrid.size())*float('nan')
         if hasattr(a2ggrid, 'mask'):
             mask = a2ggrid.mask()
@@ -188,7 +188,8 @@ def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name):
                     index = i.argmin(axis=0)
                     geomodel.append(float(codes[index]))
                     idx=idx+1
-            sgems.set_property(tg_grid_name, tg_prop_name+'_'+str(sc), geomodel)
+            if len(np.unique(geomodel)) == len(codes):
+                sgems.set_property(tg_grid_name, tg_prop_name+'_'+str(sc), geomodel)
 
 #################################################################################################
 
