@@ -17,7 +17,7 @@
    <string>LPM-Geomod_Suite</string>
   </property>
   <property name="AlgorithmDescription" stdset="0">
-   <string>creates a deterministic geologic model</string>
+   <string>creates different scenarios</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
    <item row="0" column="0">
