@@ -213,7 +213,7 @@
              <number>10000</number>
             </property>
             <property name="value">
-             <number>99</number>
+             <number>2000</number>
             </property>
            </widget>
           </item>
@@ -228,6 +228,23 @@
            <widget class="QLabel" name="label_3">
             <property name="text">
              <string>Perturbation factor</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spinBox_3">
+            <property name="maximum">
+             <number>99999</number>
+            </property>
+            <property name="value">
+             <number>13479</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Seed</string>
             </property>
            </widget>
           </item>
