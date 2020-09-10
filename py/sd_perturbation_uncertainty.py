@@ -127,13 +127,12 @@ def interpolate_variables(x, y, z, variables, codes, grid, vargs, keep_variables
     print('Finished interpolating!')
     return interpolated_variables
 
-def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, tg_prop_name, ids, acceptance, rt_prop):
+def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, tg_prop_name, ids, acceptance, rt_prop, num_models):
     print('Creating a geologic model...')
     
     int_variables = np.array(interpolated_variables).T
     geomodel = []
     idx = 0
-    num_models = 0
     for i in int_variables:
         if np.isnan(i).all():
             geomodel.append(float('nan'))
@@ -148,8 +147,7 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
         pass
     else:
         sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
-        num_models = num_models + 1
-    print('{} geologic models accepted!'.format(num_models))
+        num_models.append('x')
             
     return geomodel
 
@@ -262,6 +260,7 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
                 sim_variograms = dict(zip(codes, varg_lst))
             
         #interpolating variables
+        num_models = []
         for idx in range(n_reals):
             print('Working on realization {}...'.format(idx+1))
 
@@ -277,7 +276,9 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
             #creating a geologic model
             ids = [sgems.get_closest_nodeid(tg_grid_name, xi, yi, zi) for xi, yi, zi in zip(x,y,z)]
             rt_prop = sd_to_cat(variables, codes)
-            build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name_temp, ids, acceptance, rt_prop)
+            build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name_temp, ids, acceptance, rt_prop, num_models)
+
+            print('{} geologic models accepted!'.format(len(num_models)))
 
     
         print('Finished!')

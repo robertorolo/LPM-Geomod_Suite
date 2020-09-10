@@ -47,6 +47,7 @@ def coordinates_transform(coords, major_med, major_min, azimuth, dip, rake):
 def kernel(function, nugget, support, dist):
     support = 1.0/support
     er=support*dist
+    print(er[0])
     if function == 'gaussian':
         return (1.0 - nugget) * np.exp(-er**1.8) if dist is not 0 else nugget
     if function == 'spherical':
@@ -72,22 +73,23 @@ class RBF:
         X = np.array([x, y, z]).T
         self.X = coordinates_transform(X, major_med, major_min, azimuth, dip, rake)
 
-    def train(self):
+    def train(self, dcf):
         print('Training weights...')
+        self.supports = self.support * dcf 
+        self.supports = self.supports.reshape(len(self.supports), 1)
         dist_mat = cdist(self.X, self.X)
-        int_mat = kernel(self.function, self.nugget, self.support, dist_mat)
+        int_mat = kernel(self.function, self.nugget, self.supports, dist_mat)
         weights = np.dot(np.linalg.inv(int_mat), self.var)
         self.weights = weights 
 
-    def predict(self, a2ggrid, dcf):
+    def predict(self, a2ggrid):
         print('Predicting...')
 
         x = a2ggrid.locations()
         x = coordinates_transform(x, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
 
         dist_mat = cdist(self.X, x)
-        int_mat = kernel(self.function, self.nugget, self.support, dist_mat)
-        self.weights = self.weights * dcf 
+        int_mat = kernel(self.function, self.nugget, self.supports, dist_mat)
         results = np.dot(int_mat.T, self.weights)
 
         #accounting for the mask
@@ -103,49 +105,6 @@ class RBF:
             tp=results
             
         return tp
-
-#################################################################################################
-#IDW functions and classes
-
-class IDW:
-
-    def __init__(self, x, y, z, var, power, c, major_med=1, major_min=1, azimuth=0, dip=0, rake=0):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.var = var
-        self.power = power
-        self.c = c        
-        self.major_med = major_med
-        self.major_min = major_min
-        self.azimuth = 0
-        self.dip = 0
-        self.rake = rake
-        self.weights = None
-
-        X = np.array([x, y, z]).T
-        self.X = coordinates_transform(X, major_med, major_min, azimuth, dip, rake)
-
-    def predict(self, grid, dfc_dict):
-        x = a2ggrid.locations()
-        x = coordinates_transform(x, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
-        delta = 0.01
-        predictions = {
-            'pessimistic':[],
-            'intermediate':[],
-            'optimistic':[]
-        }
-        for p in x:
-            dist_mat = cdist(self.X, p)
-            weights = 1/((dist_mat**self.power)+self.c)
-            weights /= weights.sum(axis=0)
-
-            for value in predictions:
-                weights = dfc_dict[value] * weights
-                prediction = np.dot(weights, self.var)
-                predictions[value].append(prediction)
-
-        return predictions
 
 #################################################################################################
 
@@ -250,7 +209,7 @@ def sd_to_cat(variables, codes):
         target[v < 0] = codes[idx]
     return target
 
-def mask_var(a2g_grid, results):
+def mask_var(a2ggrid, results):
     tp = np.ones(a2ggrid.size_of_mask())*float('nan') if hasattr(a2ggrid, 'mask') else np.ones(a2ggrid.size())*float('nan')
     if hasattr(a2ggrid, 'mask'):
         mask = a2ggrid.mask()
@@ -358,13 +317,13 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
                 print('Estimated support is {}'.format(kernels_par['supports'][idx]))
 
             rbf = RBF(x, y, z, v, function=kernels_par['function'][idx], nugget=kernels_par['nuggets'][idx], support=kernels_par['supports'][idx], major_med=kernels_par['major_meds'][idx], major_min=kernels_par['major_mins'][idx], azimuth=kernels_par['azms'][idx], dip=kernels_par['dips'][idx], rake=kernels_par['rakes'][idx])
-            rbf.train()
             
             dc_param = dc_parametrization(v, dcf_param, f_min)
             for t in dc_param:
                 print('Working on {}...'.format(t))
                 
-                results = rbf.predict(a2g_grid, dc_param[t])
+                rbf.train(dc_param[t])
+                results = rbf.predict(a2g_grid)
                 interpolated_variables[rt][t] = results
 
                 if keep_variables == '1':
