@@ -11,6 +11,7 @@ from itertools import product
 import time
 from sklearn.preprocessing import MinMaxScaler
 from scipy.stats import norm
+from sklearn.metrics import confusion_matrix
 
 #################################################################################################
 
@@ -126,59 +127,37 @@ def interpolate_variables(x, y, z, variables, codes, grid, vargs, keep_variables
     print('Finished interpolating!')
     return interpolated_variables
 
-def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, tg_prop_name):
+def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, tg_prop_name, ids, acceptance, rt_prop):
     print('Creating a geologic model...')
     
-    if var_type == 'Indicators':
-        
-        if len(interpolated_variables) == 1:
-            nn_results = helpers.nn(x, y, z, variables[0], grid)
-            if keep_variables == '1':
-                prop_name = 'nn_'+str(codes[0])
-                sgems.set_property(tg_grid_name, prop_name, nn_results.tolist())
-            proportion = sum(nn_results==1)/len(nn_results)
-            print('Cutting-off interpolated indicator property in {}'.format(proportion.round(2)))
-            q = np.quantile(interpolated_variables[0], (1 - proportion))
-            solid = np.where(interpolated_variables[0] > q, 1, 0)
-            sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
-
+    int_variables = np.array(interpolated_variables).T
+    geomodel = []
+    idx = 0
+    num_models = 0
+    for i in int_variables:
+        if np.isnan(i).all():
+            geomodel.append(float('nan'))
+            idx=idx+1
         else:
-            int_variables = np.array(interpolated_variables).T
-            geomodel = []
-            idx = 0
-            for i in int_variables:
-                if np.isnan(i).all():
-                    geomodel.append(float('nan'))
-                    idx=idx+1
-                else:
-                    index = i.argmax(axis=0)
-                    geomodel.append(float(codes[index]))
-                    idx=idx+1
-            sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
-            print('Geologic model created!')
-
+            index = i.argmin(axis=0)
+            geomodel.append(float(codes[index]))
+            idx=idx+1
+    cm = confusion_matrix(rt_prop, np.array(geomodel)[ids], normalize='true')
+    diag = np.diagonal(cm)
+    if np.any(diag < acceptance):
+        pass
     else:
-
-        if len(interpolated_variables) == 1:
-            solid = np.where(interpolated_variables[0] < 0, 1, 0)
-            sgems.set_property(tg_grid_name, 'rt_{}'.format(codes[0]), solid.tolist())
-
-        else:
-            int_variables = np.array(interpolated_variables).T
-            geomodel = []
-            idx = 0
-            for i in int_variables:
-                if np.isnan(i).all():
-                    geomodel.append(float('nan'))
-                    idx=idx+1
-                else:
-                    index = i.argmin(axis=0)
-                    geomodel.append(float(codes[index]))
-                    idx=idx+1
-            sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
-            print('Geologic model created!')
+        sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
+        num_models = num_models + 1
+    print('{} geologic models accepted!'.format(num_models))
             
     return geomodel
+
+def sd_to_cat(variables, codes):
+    target = np.zeros(len(variables[0]))
+    for idx, v in enumerate(variables):
+        target[v < 0] = codes[idx]
+    return target
 
 #################################################################################################
 
@@ -232,6 +211,7 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
         n_lines = int(self.params['spinBox_2']['value'])
         p_factor = float(self.params['doubleSpinBox']['value'])
         seed = int(self.params['spinBox_3']['value'])
+        acceptance = float(self.params['doubleSpinBox_2']['value'])
 
         #getting variograms for interpolation
         print('Getting variogram models')
@@ -283,6 +263,7 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
             
         #interpolating variables
         for idx in range(n_reals):
+            print('Working on realization {}...'.format(idx+1))
 
             tg_prop_name_temp = tg_prop_name+'_real_{}'.format(idx)
 
@@ -294,7 +275,9 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
             interpolated_variables = interpolate_variables(x, y, z, perturbed_variables, codes, a2g_grid, variograms, keep_variables, var_type, tg_prop_name_temp, tg_grid_name)
 
             #creating a geologic model
-            geomodel = build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name_temp)
+            ids = [sgems.get_closest_nodeid(tg_grid_name, xi, yi, zi) for xi, yi, zi in zip(x,y,z)]
+            rt_prop = sd_to_cat(variables, codes)
+            build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name_temp, ids, acceptance, rt_prop)
 
     
         print('Finished!')

@@ -10,6 +10,8 @@ import time
 from scipy.spatial.distance import cdist
 import math
 import itertools
+from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import MinMaxScaler
 
 #################################################################################################
 
@@ -103,6 +105,49 @@ class RBF:
         return tp
 
 #################################################################################################
+#IDW functions and classes
+
+class IDW:
+
+    def __init__(self, x, y, z, var, power, c, major_med=1, major_min=1, azimuth=0, dip=0, rake=0):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.var = var
+        self.power = power
+        self.c = c        
+        self.major_med = major_med
+        self.major_min = major_min
+        self.azimuth = 0
+        self.dip = 0
+        self.rake = rake
+        self.weights = None
+
+        X = np.array([x, y, z]).T
+        self.X = coordinates_transform(X, major_med, major_min, azimuth, dip, rake)
+
+    def predict(self, grid, dfc_dict):
+        x = a2ggrid.locations()
+        x = coordinates_transform(x, self.major_med, self.major_min, self.azimuth, self.dip, self.rake)
+        delta = 0.01
+        predictions = {
+            'pessimistic':[],
+            'intermediate':[],
+            'optimistic':[]
+        }
+        for p in x:
+            dist_mat = cdist(self.X, p)
+            weights = 1/((dist_mat**self.power)+self.c)
+            weights /= weights.sum(axis=0)
+
+            for value in predictions:
+                weights = dfc_dict[value] * weights
+                prediction = np.dot(weights, self.var)
+                predictions[value].append(prediction)
+
+        return predictions
+
+#################################################################################################
 
 #exibe os valores do dicionario de parametros
 def read_params(a,j=''):
@@ -163,7 +208,7 @@ def combinate(codes):
     tps = ['pessimistic', 'intermediate', 'optimistic']
     return list(itertools.product(tps, repeat=len(codes)))
 
-def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name):
+def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name, ids, acceptance, rt_prop):
     #implicit binary modeling
     if len(interpolated_variables) == 1:
         for t in interpolated_variables[int(codes[0])]:
@@ -172,6 +217,7 @@ def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name):
 
     #multicategorical
     else:
+        num_models = 0
         combinations = combinate(codes)
         for sc, c in enumerate(combinations):
             int_variables = []
@@ -188,8 +234,35 @@ def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name):
                     index = i.argmin(axis=0)
                     geomodel.append(float(codes[index]))
                     idx=idx+1
-            if len(np.unique(geomodel)) == len(codes):
+            
+            cm = confusion_matrix(rt_prop, np.array(geomodel)[ids], normalize='true')
+            diag = np.diagonal(cm)
+            if np.any(diag < acceptance):
+                pass
+            else:
                 sgems.set_property(tg_grid_name, tg_prop_name+'_'+str(sc), geomodel)
+                num_models = num_models + 1
+        print('{} geologic models accepted!'.format(num_models))
+
+def sd_to_cat(variables, codes):
+    target = np.zeros(len(variables[0]))
+    for idx, v in enumerate(variables):
+        target[v < 0] = codes[idx]
+    return target
+
+def mask_var(a2g_grid, results):
+    tp = np.ones(a2ggrid.size_of_mask())*float('nan') if hasattr(a2ggrid, 'mask') else np.ones(a2ggrid.size())*float('nan')
+    if hasattr(a2ggrid, 'mask'):
+        mask = a2ggrid.mask()
+        r_idx = 0
+        for idx, val in enumerate(mask):
+            if val == True:
+                tp[idx] = results[r_idx]
+                r_idx = r_idx + 1
+    else:
+        tp=results
+        
+    return tp
 
 #################################################################################################
 
@@ -226,6 +299,7 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
         
         dcf_param = self.params['comboBox_2']['value']
         f_min = float(self.params['doubleSpinBox']['value'])
+        acceptance = float(self.params['doubleSpinBox_2']['value'])
 
         #kernels variables
         function = self.params['comboBox']['value']
@@ -283,13 +357,14 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
                 kernels_par['supports'][idx] = helpers.max_dist(x, y, z, mask, a2g_grid)
                 print('Estimated support is {}'.format(kernels_par['supports'][idx]))
 
+            rbf = RBF(x, y, z, v, function=kernels_par['function'][idx], nugget=kernels_par['nuggets'][idx], support=kernels_par['supports'][idx], major_med=kernels_par['major_meds'][idx], major_min=kernels_par['major_mins'][idx], azimuth=kernels_par['azms'][idx], dip=kernels_par['dips'][idx], rake=kernels_par['rakes'][idx])
+            rbf.train()
+            
             dc_param = dc_parametrization(v, dcf_param, f_min)
             for t in dc_param:
                 print('Working on {}...'.format(t))
-                rbf = RBF(x, y, z, v, function=kernels_par['function'][idx], nugget=kernels_par['nuggets'][idx], support=kernels_par['supports'][idx], major_med=kernels_par['major_meds'][idx], major_min=kernels_par['major_mins'][idx], azimuth=kernels_par['azms'][idx], dip=kernels_par['dips'][idx], rake=kernels_par['rakes'][idx])
-                rbf.train()
+                
                 results = rbf.predict(a2g_grid, dc_param[t])
-
                 interpolated_variables[rt][t] = results
 
                 if keep_variables == '1':
@@ -300,7 +375,10 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
 
         #Generating geological models
         print('Building geomodel...')
-        build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name)
+        #getting closest node to each sample
+        ids = [sgems.get_closest_nodeid(tg_grid_name, xi, yi, zi) for xi, yi, zi in zip(x,y,z)]
+        rt_prop = sd_to_cat(variables, codes)
+        build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name, ids, acceptance, rt_prop)
 
         print('Done!')
 
