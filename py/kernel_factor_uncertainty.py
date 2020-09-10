@@ -47,7 +47,6 @@ def coordinates_transform(coords, major_med, major_min, azimuth, dip, rake):
 def kernel(function, nugget, support, dist):
     support = 1.0/support
     er=support*dist
-    print(er[0])
     if function == 'gaussian':
         return (1.0 - nugget) * np.exp(-er**1.8) if dist is not 0 else nugget
     if function == 'spherical':
@@ -225,7 +224,7 @@ def mask_var(a2ggrid, results):
 
 #################################################################################################
 
-class data_conditioning_uncertainty: #aqui vai o nome do plugin
+class kernel_factor_uncertainty: #aqui vai o nome do plugin
     def __init__(self):
         pass
 
@@ -349,9 +348,9 @@ class data_conditioning_uncertainty: #aqui vai o nome do plugin
         return True
 
     def name(self):
-        return "data_conditioning_uncertainty" #aqui vai o nome do plugin
+        return "kernel_factor_uncertainty" #aqui vai o nome do plugin
 
 #################################################################################################
 
 def get_plugins():
-    return ["data_conditioning_uncertainty"] #aqui vai o nome do plugin
+    return ["kernel_factor_uncertainty"] #aqui vai o nome do plugin
