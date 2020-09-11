@@ -143,7 +143,8 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
             idx=idx+1
     cm = confusion_matrix(rt_prop, np.array(geomodel)[ids], normalize='true')
     diag = np.diagonal(cm)
-    if np.any(diag < acceptance):
+    m = np.mean(diag)
+    if m < acceptance:
         pass
     else:
         sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
@@ -278,9 +279,7 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
             rt_prop = sd_to_cat(variables, codes)
             build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name_temp, ids, acceptance, rt_prop, num_models)
 
-            print('{} geologic models accepted!'.format(len(num_models)))
-
-    
+        print('{} geologic models accepted!'.format(len(num_models)))
         print('Finished!')
 
         return True
