@@ -144,7 +144,8 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
     cm = confusion_matrix(rt_prop, np.array(geomodel)[ids], normalize='true')
     diag = np.diagonal(cm)
     m = np.mean(diag)
-    if m < acceptance:
+    #if m < acceptance:
+    if np.any(diag < acceptance):
         pass
     else:
         sgems.set_property(tg_grid_name, tg_prop_name, geomodel)

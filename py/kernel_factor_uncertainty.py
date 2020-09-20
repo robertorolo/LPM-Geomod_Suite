@@ -175,6 +175,7 @@ def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name, i
 
     #multicategorical
     else:
+        accepted_combs = []
         num_models = 0
         combinations = combinate(codes)
         for sc, c in enumerate(combinations):
@@ -195,13 +196,17 @@ def build_geomodels(interpolated_variables, codes, tg_grid_name, tg_prop_name, i
             
             cm = confusion_matrix(rt_prop, np.array(geomodel)[ids], normalize='true')
             diag = np.diagonal(cm)
+            print(diag)
             m = np.mean(diag)
-            if m < acceptance:
+            #if m < acceptance:
+            if np.any(diag < acceptance):
                 pass
             else:
                 sgems.set_property(tg_grid_name, tg_prop_name+'_'+str(sc), geomodel)
                 num_models = num_models + 1
+                accepted_combs.append(c)
         print('{} geologic models accepted!'.format(num_models))
+        print(accepted_combs)
 
 def sd_to_cat(variables, codes):
     target = np.zeros(len(variables[0]))
