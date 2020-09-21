@@ -58,7 +58,6 @@ def sample_negative(dists, pool_list, r):
     return cat
 
 def sample_positive(dists, pool_list, r):
-
     pos_f = dists >= 0
     pos_dists = dists[pos_f]
     pos_cats = pool_list[pos_f]
@@ -96,19 +95,6 @@ def cat_sampler(dists, pool_list, r):
         cat = sample_positive(dists, pool_list, r)
     else:
         cat = sample_negative(dists, pool_list, r)
-
-    return cat
-
-def new_approach(dists, pool_list, r):
-    cat = float('nan')
-    sorted_indexes = np.argsort(dists)
-    dists_sorted = np.sort(dists)
-
-    if len(dists_sorted) == 2:
-        if r < dists_sorted[1]:
-            cat = pool_list[sorted_indexes[1]]
-        else:
-            cat = pool_list[sorted_indexes[0]]
 
     return cat
 
@@ -152,25 +138,8 @@ def build_geomodel(interpolated_variables, codes, tg_grid_name, tg_prop_name, re
             pool_list = np.array(codes)[cats_inside]
             dists = i[cats_inside]
             #r_val = np.random.choice(pool_list)
-            #r_val = cat_sampler(dists, pool_list, real[idx])
-            r_val = new_approach(dists, pool_list, real[idx])
+            r_val = cat_sampler(dists, pool_list, real[idx])
             geomodel.append(r_val)
-        else:
-            index = i.argmin(axis=0)
-            geomodel.append(float(codes[index]))
-
-    sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
-
-def build_perturb_geomodel(interpolated_variables, codes, tg_grid_name, tg_prop_name, real, bw):
-    
-    geomodel = []
-    for idx, i in enumerate(interpolated_variables.T):
-        dists_inside = (i > -bw) & (i < bw)
-        if np.sum(dists_inside) > 1:
-            i[dists_inside] =  i[dists_inside]
-            index = i.argmin(axis=0)
-            #geomodel.append(float(codes[index]))
-            geomodel.append(float('nan'))
         else:
             index = i.argmin(axis=0)
             geomodel.append(float(codes[index]))
@@ -230,8 +199,7 @@ class boundary_simulation: #aqui vai o nome do plugin
         for i, r in enumerate(reals_scaled):
             
             n_tg_prop_name = tg_prop_name+'_'+str(i)
-            #build_geomodel(sd_matrix, codes, tg_grid_name, n_tg_prop_name, r, bw)
-            build_perturb_geomodel(sd_matrix, codes, tg_grid_name, n_tg_prop_name, r, bw)
+            build_geomodel(sd_matrix, codes, tg_grid_name, n_tg_prop_name, r, bw)
             
             #for l, var in enumerate(sd_matrix):
             #    n_tg_prop_name = tg_prop_name+'_'+str(codes[l])+'_'+str(i)
