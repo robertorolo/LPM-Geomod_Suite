@@ -197,13 +197,16 @@ class boundary_simulation: #aqui vai o nome do plugin
         num_cat(sd_matrix, tg_grid_name, tg_prop_name, bw)
         
         for i, r in enumerate(reals_scaled):
+
+            if len(sd_matrix) > 1:
             
-            n_tg_prop_name = tg_prop_name+'_'+str(i)
-            build_geomodel(sd_matrix, codes, tg_grid_name, n_tg_prop_name, r, bw)
+                n_tg_prop_name = tg_prop_name+'_'+str(i)
             
-            #for l, var in enumerate(sd_matrix):
-            #    n_tg_prop_name = tg_prop_name+'_'+str(codes[l])+'_'+str(i)
-            #    build_binary_geomodel(var, tg_grid_name, n_tg_prop_name, r, bw)
+            else:
+            
+                for l, var in enumerate(sd_matrix):
+                    n_tg_prop_name = tg_prop_name+'_'+str(codes[l])+'_'+str(i)
+                    build_binary_geomodel(var, tg_grid_name, n_tg_prop_name, r, bw)
 
         print('Finished!')
 
