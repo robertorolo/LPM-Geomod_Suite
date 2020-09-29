@@ -24,77 +24,38 @@ def read_params(a,j=''):
         else:
             read_params(a[i],j+"['"+str(i)+"']")
 
-def sample_negative(dists, pool_list, r):
-    neg_f = dists <= 0
-    neg_dists = dists[neg_f]
-    neg_cats = pool_list[neg_f]
-    neg_sorted_indexes = np.argsort(neg_dists)
-    neg_dists_sorted = np.sort(neg_dists)
-    how_many = len(neg_dists_sorted)
+def sofmax_transformation(df_lst, gamma):
+	
+	prob_lst = np.empty(len(df_lst))
 
-    if len(neg_dists_sorted) == 0:
-        pos_f = dists >= 0
-        pos_dists = dists[pos_f]
-        pos_cats = pool_list[pos_f]
-        cat = pos_cats[np.argmin(pos_dists)]
+	if True in np.isnan(df_lst):
+		prob_lst = np.ones(len(df_lst))*float("nan")
 
-    # if there is only one negative distance
-    if how_many == 1:
-        if r < 0:
-            cat = neg_cats[neg_sorted_indexes[0]]
-    # if there is more than one negative distance
-    else:
-        for idx, i in enumerate(neg_dists_sorted):
-            if idx == 0:
-                if (r < neg_dists_sorted[idx+1]):
-                    cat = neg_cats[neg_sorted_indexes[idx]]
-            if idx == how_many-1:
-                if (r > i) & (r < 0):
-                    cat = neg_cats[neg_sorted_indexes[idx]]
-            else:
-                if (r > i) & (r < neg_dists_sorted[idx+1]):
-                    cat = neg_cats[neg_sorted_indexes[idx]]
-    
-    return cat
+	else:
+		exp_lst = [np.exp(-i/gamma) for i in df_lst]
+		for i, exp in enumerate(exp_lst):
+			prob = exp/sum(exp_lst)
+			prob_lst[i] = prob
 
-def sample_positive(dists, pool_list, r):
-    pos_f = dists >= 0
-    pos_dists = dists[pos_f]
-    pos_cats = pool_list[pos_f]
-    pos_sorted_indexes = np.argsort(pos_dists)
-    pos_dists_sorted = np.sort(pos_dists)
-    how_many = len(pos_dists_sorted)
+	return prob_lst
 
-    if len(pos_dists_sorted) == 0:
-        neg_f = dists <= 0
-        neg_dists = dists[neg_f]
-        neg_cats = pool_list[neg_f]
-        cat = neg_cats[np.argmax(neg_dists)]
+def cat_random_sample(prob_list, u):
 
-    # if there is only one positive distance
-    if how_many == 1:
-        if r > 0:
-            cat = pos_cats[pos_sorted_indexes[0]]
-    # if there is more than one positive distance
-    else:
-        for idx, i in enumerate(pos_dists_sorted):
-            if idx == 0:
-                if (r > 0) & (r < i):
-                    cat = pos_cats[pos_sorted_indexes[idx]]
-            if idx == how_many-1:
-                if (r > pos_dists_sorted[idx-1]):
-                    cat = pos_cats[pos_sorted_indexes[idx]]
-            else:
-                if (r > i) & (r < pos_dists_sorted[idx+1]):
-                    cat = pos_cats[pos_sorted_indexes[idx]]
+    position = 0
+    probs = []
+    for idx, prob in enumerate(prob_list):
+        probs.append(prob)
+        acc = sum(probs)
+        if u <= acc:
+            position = idx
+            break
 
-    return cat
+    return position
 
-def cat_sampler(dists, pool_list, r):
-    if r > 0:
-        cat = sample_positive(dists, pool_list, r)
-    else:
-        cat = sample_negative(dists, pool_list, r)
+def prob_cat_sampler(dists, gamma, pool_list, r):
+    prob_lst = sofmax_transformation(dists, gamma)
+    a = cat_random_sample(prob_lst, r)
+    cat = pool_list[a]
 
     return cat
 
@@ -112,6 +73,7 @@ def num_cat(interpolated_variables, tg_grid_name, tg_prop_name, bw):
     sgems.set_property(tg_grid_name, tg_prop_name+'_num_cats_{}'.format(bw), num_cats)
 
 def build_binary_geomodel(interpolated_variable, tg_grid_name, tg_prop_name, real, bw):
+    
     geomodel = np.ones(len(interpolated_variable)) * float('nan')
     indexes = np.arange(len(geomodel))
     outside = interpolated_variable > bw
@@ -129,7 +91,7 @@ def build_binary_geomodel(interpolated_variable, tg_grid_name, tg_prop_name, rea
 
     sgems.set_property(tg_grid_name, tg_prop_name, geomodel.tolist())
 
-def build_geomodel(interpolated_variables, codes, tg_grid_name, tg_prop_name, real, bw):
+def build_geomodel(interpolated_variables, gamma, codes, tg_grid_name, tg_prop_name, real, bw):
     
     geomodel = []
     for idx, i in enumerate(interpolated_variables.T):
@@ -138,7 +100,7 @@ def build_geomodel(interpolated_variables, codes, tg_grid_name, tg_prop_name, re
             pool_list = np.array(codes)[cats_inside]
             dists = i[cats_inside]
             #r_val = np.random.choice(pool_list)
-            r_val = cat_sampler(dists, pool_list, real[idx])
+            r_val = prob_cat_sampler(dists, gamma, pool_list, real[idx])
             geomodel.append(r_val)
         else:
             index = i.argmin(axis=0)
@@ -187,20 +149,26 @@ class boundary_simulation: #aqui vai o nome do plugin
 
         codes = [int(i.split('_')[-1]) for i in sd_var_names_lst]
 
+        gamma = float(self.params['doubleSpinBox_2']['value'])
+
         sd_matrix = np.array([sgems.get_property(sd_grid_name, p) for p in sd_var_names_lst])
+        if gamma == 0:
+            gamma = np.max(sd_matrix)
         reals = np.array([sgems.get_property(sim_grid_name, p) for p in sim_var_names_lst])
         norm_reals = np.array([norm.cdf(lst) for lst in reals])
-        scaler = MinMaxScaler(feature_range=(-bw, bw))
-        #scaler = MinMaxScaler(feature_range=(-0.5, 0.5))
-        reals_scaled = scaler.fit_transform(norm_reals)
+        #scaler = MinMaxScaler(feature_range=(-bw, bw))
+        #reals_scaled = scaler.fit_transform(norm_reals)
+        reals_scaled = norm_reals
 
         num_cat(sd_matrix, tg_grid_name, tg_prop_name, bw)
         
         for i, r in enumerate(reals_scaled):
+            print('Working on real {}...'.format(i+1))
 
             if len(sd_matrix) > 1:
             
                 n_tg_prop_name = tg_prop_name+'_'+str(i)
+                build_geomodel(sd_matrix, gamma, codes, tg_grid_name, n_tg_prop_name, r, bw)
             
             else:
             
