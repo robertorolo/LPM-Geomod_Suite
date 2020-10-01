@@ -54,8 +54,12 @@ def cat_random_sample(prob_list, u):
 
 def prob_cat_sampler(dists, gamma, pool_list, r):
     prob_lst = sofmax_transformation(dists, gamma)
-    a = cat_random_sample(prob_lst, r)
-    cat = pool_list[a]
+
+    if True in np.isnan(prob_lst):
+        cat = float('nan')
+    else:
+        a = cat_random_sample(prob_lst, r)
+        cat = pool_list[a]
 
     return cat
 
@@ -95,16 +99,21 @@ def build_geomodel(interpolated_variables, gamma, codes, tg_grid_name, tg_prop_n
     
     geomodel = []
     for idx, i in enumerate(interpolated_variables.T):
-        cats_inside = (i > -bw) & (i < bw)
-        if np.sum(cats_inside) > 1:
-            pool_list = np.array(codes)[cats_inside]
-            dists = i[cats_inside]
-            #r_val = np.random.choice(pool_list)
-            r_val = prob_cat_sampler(dists, gamma, pool_list, real[idx])
-            geomodel.append(r_val)
+        if True in np.isnan(i):
+            geomodel.append(float('nan'))
         else:
-            index = i.argmin(axis=0)
-            geomodel.append(float(codes[index]))
+            cats_inside = (i > -bw) & (i < bw)
+            if np.sum(cats_inside) > 1:
+                pool_list = np.array(codes)[cats_inside]
+                dists = i[cats_inside]
+                #r_val = np.random.choice(pool_list)
+                if gamma == 0:
+                    gamma = np.max(np.abs(dists))
+                r_val = prob_cat_sampler(dists, gamma, pool_list, real[idx])
+                geomodel.append(r_val)
+            else:
+                index = i.argmin(axis=0)
+                geomodel.append(float(codes[index]))
 
     sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
 
@@ -133,6 +142,7 @@ class boundary_simulation: #aqui vai o nome do plugin
       
         #aqui vai o codigo
         #getting variables
+        print('Getting variables and transforming realizations..')
         sd_grid_name = self.params['gridselectorbasic']['value']
         sd_var_names = self.params['orderedpropertyselector']['value']
 
@@ -152,18 +162,20 @@ class boundary_simulation: #aqui vai o nome do plugin
         gamma = float(self.params['doubleSpinBox_2']['value'])
 
         sd_matrix = np.array([sgems.get_property(sd_grid_name, p) for p in sd_var_names_lst])
-        if gamma == 0:
-            gamma = np.max(sd_matrix)
+        #if gamma == 0:
+        #    gamma = np.max(sd_matrix)
         reals = np.array([sgems.get_property(sim_grid_name, p) for p in sim_var_names_lst])
         norm_reals = np.array([norm.cdf(lst) for lst in reals])
-        #scaler = MinMaxScaler(feature_range=(-bw, bw))
-        #reals_scaled = scaler.fit_transform(norm_reals)
-        reals_scaled = norm_reals
+        if len(sd_matrix) == 1:
+            scaler = MinMaxScaler(feature_range=(-bw, bw))
+            reals_scaled = scaler.fit_transform(norm_reals)
+        else:
+            reals_scaled = norm_reals
 
         num_cat(sd_matrix, tg_grid_name, tg_prop_name, bw)
         
         for i, r in enumerate(reals_scaled):
-            print('Working on real {}...'.format(i+1))
+            print('Working on realization {}...'.format(i+1))
 
             if len(sd_matrix) > 1:
             

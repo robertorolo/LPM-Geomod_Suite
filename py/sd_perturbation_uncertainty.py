@@ -143,9 +143,11 @@ def build_geomodel(var_type, interpolated_variables, codes, grid, tg_grid_name, 
             idx=idx+1
     cm = confusion_matrix(rt_prop, np.array(geomodel)[ids], normalize='true')
     diag = np.diagonal(cm)
+    print(diag)
     m = np.mean(diag)
     #if m < acceptance:
     if np.any(diag < acceptance):
+        print('Model rejected!')
         pass
     else:
         sgems.set_property(tg_grid_name, tg_prop_name, geomodel)
@@ -211,7 +213,11 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
         n_lines = int(self.params['spinBox_2']['value'])
         p_factor = float(self.params['doubleSpinBox']['value'])
         seed = int(self.params['spinBox_3']['value'])
-        acceptance = float(self.params['doubleSpinBox_2']['value'])
+        
+        acceptance = [float(i) for i in self.params['lineEdit_2']['value'].split(',')]
+        if len(acceptance) == 1 and len(codes) > 1:
+            acceptance = acceptance * len(codes)
+        acceptance = np.array(acceptance)
 
         #getting variograms for interpolation
         print('Getting variogram models')
@@ -260,6 +266,9 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
 
             else:
                 sim_variograms = dict(zip(codes, varg_lst))
+
+        ids = [sgems.get_closest_nodeid(tg_grid_name, xi, yi, zi) for xi, yi, zi in zip(x,y,z)]
+        rt_prop = sd_to_cat(variables, codes)
             
         #interpolating variables
         num_models = []
@@ -276,8 +285,6 @@ class sd_perturbation_uncertainty: #aqui vai o nome do plugin
             interpolated_variables = interpolate_variables(x, y, z, perturbed_variables, codes, a2g_grid, variograms, keep_variables, var_type, tg_prop_name_temp, tg_grid_name)
 
             #creating a geologic model
-            ids = [sgems.get_closest_nodeid(tg_grid_name, xi, yi, zi) for xi, yi, zi in zip(x,y,z)]
-            rt_prop = sd_to_cat(variables, codes)
             build_geomodel(var_type, interpolated_variables, codes, a2g_grid, tg_grid_name, tg_prop_name_temp, ids, acceptance, rt_prop, num_models)
 
         print('{} geologic models accepted!'.format(len(num_models)))

@@ -74,12 +74,13 @@ class RBF:
 
     def train(self, dcf):
         print('Training weights...')
-        self.supports = self.support * dcf 
+        self.supports = self.support * dcf
         self.supports = self.supports.reshape(len(self.supports), 1)
+        print('max support: ', np.max(self.supports), 'min support: ', np.min(self.supports))
         dist_mat = cdist(self.X, self.X)
         int_mat = kernel(self.function, self.nugget, self.supports, dist_mat)
         weights = np.dot(np.linalg.inv(int_mat), self.var)
-        self.weights = weights 
+        self.weights = weights
 
     def predict(self, a2ggrid):
         print('Predicting...')
@@ -132,28 +133,32 @@ def line_coef(p1, p2):
     
     return a, b
 
-def dc_parametrization(sd, function, f_min):
+def dc_parametrization(sd, function, f_min_o, f_min_p):
     param = {}
     sd_min = np.min(sd)
     sd_max = np.max(sd)
     if function == 'linear':
-        ap, bp = line_coef([sd_min, f_min], [0, 1])
-        ao, bo = line_coef([sd_max, f_min], [0, 1])
+        ap, bp = line_coef([sd_min, f_min_p], [0, 1])
+        ao, bo = line_coef([sd_max, f_min_o], [0, 1])
         param['pessimistic'] = ap*sd+bp
         param['optimistic'] = ao*sd+bo
         param['intermediate'] = np.ones(len(sd))
     else:
         x_neg = sd[sd<0]
         x_pos = sd[sd>0]
-        a_pos, h_pos, k_pos = sqrt_coef(vertice=[0, 1], p=[sd_max, f_min])
-        a_neg, h_neg, k_neg = sqrt_coef(vertice=[0, 1], p=[np.abs(sd_min), f_min])
         
-        y_pos = a_pos * np.sqrt(x_pos-h_pos) + k_pos
-        y_neg = -a_neg * np.sqrt(np.abs(x_neg-h_neg)) + k_neg
+        a_pos_p, h_pos_p, k_pos_p = sqrt_coef(vertice=[0, 1], p=[sd_max, f_min_p])
+        a_neg_p, h_neg_p, k_neg_p = sqrt_coef(vertice=[0, 1], p=[np.abs(sd_min), f_min_p])
+
+        a_pos_o, h_pos_o, k_pos_o = sqrt_coef(vertice=[0, 1], p=[sd_max, f_min_o])
+        a_neg_o, h_neg_o, k_neg_o = sqrt_coef(vertice=[0, 1], p=[np.abs(sd_min), f_min_o])
+        
+        y_pos = a_pos_o * np.sqrt(x_pos-h_pos_o) + k_pos_o
+        y_neg = -a_neg_o * np.sqrt(np.abs(x_neg-h_neg_o)) + k_neg_o
         yo = np.concatenate([y_neg, y_pos])
 
-        y_pos = -a_pos * np.sqrt(x_pos-h_pos) + k_pos
-        y_neg = a_neg * np.sqrt(np.abs(x_neg-h_neg)) + k_neg
+        y_pos = -a_pos_p * np.sqrt(x_pos-h_pos_p) + k_pos_p
+        y_neg = a_neg_p * np.sqrt(np.abs(x_neg-h_neg_p)) + k_neg_p
         yp = np.concatenate([y_neg, y_pos])
 
         param['pessimistic'] = yp
@@ -262,8 +267,13 @@ class kernel_factor_uncertainty: #aqui vai o nome do plugin
         codes = [v.split('_')[-1] for v in var_names]
         
         dcf_param = self.params['comboBox_2']['value']
-        f_min = float(self.params['doubleSpinBox']['value'])
-        acceptance = float(self.params['doubleSpinBox_2']['value'])
+        f_min_o = float(self.params['doubleSpinBox']['value'])
+        f_min_p = float(self.params['doubleSpinBox_2']['value'])
+        
+        acceptance = [float(i) for i in self.params['lineEdit_9']['value'].split(',')]
+        if len(acceptance) == 1 and len(codes) > 1:
+            acceptance = acceptance * len(codes)
+        acceptance = np.array(acceptance)
 
         #kernels variables
         function = self.params['comboBox']['value']
@@ -323,7 +333,7 @@ class kernel_factor_uncertainty: #aqui vai o nome do plugin
 
             rbf = RBF(x, y, z, v, function=kernels_par['function'][idx], nugget=kernels_par['nuggets'][idx], support=kernels_par['supports'][idx], major_med=kernels_par['major_meds'][idx], major_min=kernels_par['major_mins'][idx], azimuth=kernels_par['azms'][idx], dip=kernels_par['dips'][idx], rake=kernels_par['rakes'][idx])
             
-            dc_param = dc_parametrization(v, dcf_param, f_min)
+            dc_param = dc_parametrization(v, dcf_param, f_min_o, f_min_p)
             for t in dc_param:
                 print('Working on {}...'.format(t))
                 
