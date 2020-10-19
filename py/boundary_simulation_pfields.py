@@ -119,7 +119,7 @@ def build_geomodel(interpolated_variables, gamma, codes, tg_grid_name, tg_prop_n
 
 #################################################################################################
 
-class boundary_simulation: #aqui vai o nome do plugin
+class boundary_simulation_pfields: #aqui vai o nome do plugin
     def __init__(self):
         pass
 
@@ -198,9 +198,9 @@ class boundary_simulation: #aqui vai o nome do plugin
         return True
 
     def name(self):
-        return "boundary_simulation" #aqui vai o nome do plugin
+        return "boundary_simulation_pfields" #aqui vai o nome do plugin
 
 #################################################################################################
 
 def get_plugins():
-    return ["boundary_simulation"] #aqui vai o nome do plugin
+    return ["boundary_simulation_pfields"] #aqui vai o nome do plugin
