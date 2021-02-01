@@ -79,7 +79,11 @@ class RBF:
         print('max support: ', np.max(self.supports), 'min support: ', np.min(self.supports))
         dist_mat = cdist(self.X, self.X)
         int_mat = kernel(self.function, self.nugget, self.supports, dist_mat)
-        weights = np.dot(np.linalg.inv(int_mat), self.var)
+        if np.linalg.det(int_mat) != 0:
+            weights = np.dot(np.linalg.inv(int_mat), self.var)
+        else:
+            print('Det equal zero. Calculating pseudo inverse...')
+            weights = np.dot(np.linalg.pinv(int_mat), self.var)
         self.weights = weights
 
     def predict(self, a2ggrid):
