@@ -10,4 +10,4 @@ This is a geologic modeling suite plugins for AR2GEMS using signed distances fun
 ## References
 A complete and detailed user manual together with algorithms explanation and case studies in real datasets can be acessed in: 
 
-[will be avaliable soon](https://www.com.br)
+[Modelagem geológica e avaliação de incerteza em modelos geológicos usando funções distância assinaladas](https://www.lume.ufrgs.br/handle/10183/231585#)
